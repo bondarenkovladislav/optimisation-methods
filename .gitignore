@@ -1,1 +1,21 @@
-.idea/*
+syntax: glob
+.idea
+./.env
+.DS_Store
+build/
+tmp/
+node_modules/
+production/
+src/config/settings.local.ts
+yarn-error.log
+/debug.log
+Lookup.sln
+Lookup.njsproj
+.vscode/launch.json
+obj/Debug/Lookup.njsproj.FileListAbsolute.txt
+obj/Debug/Tsc92bf4ecf.out
+src/assets/css/_theme.scss
+src/core/assets/css/_theme.scss
+/src/config/resolvers.local.tsx
+src/version.json
+/src/resolvers.local.tsx
