@@ -9,6 +9,9 @@ import {
 import Autocomplete from '@material-ui/lab/Autocomplete'
 import Button from '@material-ui/core/Button'
 import { Dialog } from '@material-ui/core'
+//@ts-ignore
+import { useHistory } from 'react-router-dom'
+import InputStoreService from '../classes/services/InputStoreService'
 
 export const InputCoef = () => {
   const [variablesCount, setVariablesCount] = useState<number>()
@@ -18,6 +21,7 @@ export const InputCoef = () => {
   const [valueArray, setValueArray] = useState<string[][]>()
   const [funcArray, setFuncArray] = useState<string[]>()
   const [openDialog, setOpenDialog] = useState<boolean>(true)
+  let history = useHistory()
 
   useEffect(() => {
     if (variablesCount && rowsCount) {
@@ -43,13 +47,13 @@ export const InputCoef = () => {
 
   const initArray = () => {
     const arr: string[][] = []
-    rows.forEach(row => {
+    rows.forEach((row,i) => {
       const rowArray = []
-      const values = coefLabels.forEach(() => {
-        rowArray.push('')
+      const values = coefLabels.forEach((col,j) => {
+        rowArray.push(`${j}`)
       })
-      rowArray.push('=')
-      rowArray.push('')
+      rowArray.push('<=')
+      rowArray.push(`${100}`)
       arr.push(rowArray)
     })
     setValueArray(arr)
@@ -57,8 +61,8 @@ export const InputCoef = () => {
 
   const initFuncArray = () => {
     const arr: string[] = []
-    coefLabels.forEach(coef => arr.push(''))
-    arr.push('')
+    coefLabels.forEach((coef, i) => arr.push(`${i}`))
+    arr.push(`${10}`)
     arr.push('min')
     setFuncArray(arr)
   }
@@ -157,7 +161,7 @@ export const InputCoef = () => {
                     <Grid container direction={'row'}>
                       <Autocomplete
                         value={valueArray[i][coefLabels.length]}
-                        options={['=', '!=']}
+                        options={['<=', '>=']}
                         style={{ marginLeft: '8px', marginRight: '8px' }}
                         renderInput={params => (
                           <TextField {...params} label={'type'} />
@@ -175,7 +179,20 @@ export const InputCoef = () => {
               ))}
             </Grid>
           ))}
-          <Button variant="contained" color="primary">
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              InputStoreService.setFuncArray(funcArray)
+              InputStoreService.setValueArray(valueArray)
+              if (variablesCount && rowsCount) {
+                InputStoreService.setMaxX(variablesCount)
+                InputStoreService.setRowCount(rowsCount)
+              }
+              InputStoreService.inputPreprocess()
+              history.push('/simplecs')
+            }}
+          >
             Решить симплекс методом
           </Button>
         </div>
