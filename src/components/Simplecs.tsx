@@ -1,17 +1,23 @@
-import React, { useEffect } from 'react'
-import InputStoreService from "../classes/services/InputStoreService";
+import React, { useEffect, useState } from 'react'
+import InputStoreService from '../classes/services/InputStoreService'
+import { SimplecsCalculator } from '../classes/simplecs'
+require('../css/style.css')
 
 export const Simplecs = (props: any) => {
-  // const valueArray: string[][] = JSON.parse(
-  //   localStorage.getItem('valueArray') || '{}'
-  // )
-  // const funcArray: string = JSON.parse(
-  //   localStorage.getItem('funcArray') || '{}'
-  // )
+  const [result, setResult] = useState<string>('')
 
   useEffect(() => {
-    // console.log(InputStoreService.getFuncArray(), InputStoreService.getValueArray())
+    const simplics = new SimplecsCalculator(
+      InputStoreService.getValueArray(),
+      InputStoreService.getFuncArray()
+    )
+    setResult(simplics.calculate())
   }, [])
 
-  return <div>Simplecs</div>
+  return (
+    <div>
+      <div className={'result'}></div>
+      {result}
+    </div>
+  )
 }

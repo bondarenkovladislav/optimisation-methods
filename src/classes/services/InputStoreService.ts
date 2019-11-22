@@ -1,8 +1,8 @@
 import { array, number } from 'prop-types'
 
 class InputStoreService {
-  private valueArray: string[][] | number[][] = []
-  private funcArray: string[] | number[] = []
+  private valueArray: any[][] = []
+  private funcArray: any[] = []
   private maxX: number = 0
   private rowCount: number = 0
 

@@ -1,0 +1,108 @@
+body{
+	font-size:14px;
+	margin:0px;
+	padding:0px;
+	font-family: "Times New Roman", Times, serif;	
+}
+#page{
+	width:700px;
+	margin:20px auto;
+	padding: 20px;
+	border-radius:10px;
+	font-weight: bold;
+	box-shadow:  0 0 10px #00338b;	
+}
+#page #info{
+	margin: 10px 30px 70px 30px;
+	padding:20px;
+	border-radius:10px;
+	font-weight: bold;
+	box-shadow:  0 0 10px #ababab;	
+	opacity: 0.6;
+}
+#page #info:hover{
+	opacity: 1;
+}
+#page #info .title{
+	width:100%;
+	text-align:center;
+	font-size: 18px;
+	color: #042f77;
+	text-shadow:  1px 1px 10px #00338b;
+	margin-bottom: 15px;
+}
+#page #info .right{
+	width: 100%;
+	text-align:right;
+}
+#page #info .left{
+	margin-top: 15px;
+	display:none;
+	color: #6d6d6d;
+}
+#page #info  a{
+	color: #042f77;
+}
+a{
+	text-decoration:none;
+	color: #042f77;
+	font-weight:bold;
+}
+table td, table, table th{
+	border-collapse: collapse;
+	border:1px solid #777777;
+	padding:5px;
+}
+table{
+	margin: 20px 0px;
+}
+table th{
+	background: #042f77;
+	color: #ffffff;
+}
+table .selected{
+	background: #d0d8e5;
+}
+table .selected .selected{
+	background: #a7b6d0;
+}
+.uravnenie{
+	margin-bottom:50px;
+}
+.virazhenie{
+	padding-bottom:10px;
+}
+.virazhenie a{
+	padding: 0px 5px;
+	margin: 10px;
+	background: #042f77;
+	color: #ffffff;
+	border-radius:10px;
+	font-weight: bold;
+	box-shadow:  0 0 5px rgba(0,0,0,0.5);
+}
+.virazhenie input{
+	width:30px;
+	border-left:none;
+	border-right:none;
+	border-top:none;
+	border-bottom:1px solid #939393;
+	font-style:italic;
+	text-align:center;
+	margin: 0px 10px;
+	background:#f0f0f0;
+}
+.virazhenie select{
+	border-left:none;
+	border-right:none;
+	border-top:none;
+	border-bottom:1px solid #939393;
+	width:50px;	
+	background:#f0f0f0;
+}
+.ogranichenie_add{
+	float:right;
+}
+.ogranichenie{
+	display:none;
+}
