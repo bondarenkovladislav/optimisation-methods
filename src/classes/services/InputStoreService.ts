@@ -2,10 +2,14 @@ import { SyntheticEvent } from 'react'
 
 const fs = require('fs')
 class InputStoreService {
-  private valueArray: any[][] = []
+  private valueArray: any = []
   private funcArray: any[] = []
   private maxX: number = 0
   private rowCount: number = 0
+  private mode: string = 'min'
+  private asFraqtions: boolean = false
+  private withSolveBox: boolean = false
+  private solveType: number = 1
 
   public setValueArray = (array: any[]) => {
     this.valueArray = array
@@ -41,36 +45,37 @@ class InputStoreService {
 
   public inputPreprocess = () => {
     let resultFuncArr: number[] = []
-    let resultValueArray: number[][] = []
+    let resultValueArray: { values: number[]; sign: string; b: number }[] = []
     this.valueArray.forEach((array: any, row: number) => {
-      resultValueArray[row] = []
-      let multCoef = 1
+      resultValueArray[row] = { values: [], sign: '', b: 0 }
       array.forEach((el: string, col: number) => {
-        if (el !== '<=' && el !== '>=') {
-          resultValueArray[row][
+        if (col === array.length - 1) {
+          resultValueArray[row].b = parseInt(el, 10)
+          return
+        }
+        if (el !== '≤' && el !== '≥' && el !== '=') {
+          resultValueArray[row].values[
             col === this.maxX + 1 ? col - 1 : col
           ] = parseInt(el, 10)
-        } else if (el === '>=') {
-          multCoef = -1
+        } else {
+          resultValueArray[row].sign = el
         }
       })
-      resultValueArray[row] = resultValueArray[row].map(
-        (el: number) => el * multCoef
-      )
     })
 
-    let multCoef = 1
     this.funcArray.forEach((el: any, i: number) => {
       if (el !== 'min' && el !== 'max') {
         resultFuncArr.push(parseInt(el, 10))
-      } else if (el === 'max') {
-        multCoef = -1
+      } else {
+        this.mode = el
       }
     })
-    resultFuncArr = resultFuncArr.map((el: number) => el * multCoef)
-
     this.funcArray = resultFuncArr
     this.valueArray = resultValueArray
+  }
+
+  public getMode = () => {
+    return this.mode
   }
 
   public download(filename: string, text: string) {
@@ -87,6 +92,30 @@ class InputStoreService {
     element.click()
 
     document.body.removeChild(element)
+  }
+
+  public toggleFraction = () => {
+    this.asFraqtions = !this.asFraqtions
+  }
+
+  public getFraction = () => {
+    return this.asFraqtions
+  }
+
+  public toggleSolution = () =>  {
+    this.withSolveBox = !this.withSolveBox
+  }
+
+  public getSolution = () => {
+    return this.withSolveBox
+  }
+
+  public setSolveType = (value: number) => {
+    this.solveType = value
+  }
+
+  public getSolveType = () => {
+    return this.solveType
   }
 
   public onimportData = (e: any) => {}

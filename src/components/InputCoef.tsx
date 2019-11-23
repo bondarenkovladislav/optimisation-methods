@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import Checkbox from '@material-ui/core/Checkbox';
 import {
   Container,
   TextField,
@@ -12,6 +13,16 @@ import { Dialog } from '@material-ui/core'
 //@ts-ignore
 import { useHistory } from 'react-router-dom'
 import InputStoreService from '../classes/services/InputStoreService'
+
+const comboItems = [
+  {
+    title:'Симплекс-метод',
+    value: 1
+  },{
+    title:'Метод искусственного базиса',
+    value: 2
+  }
+]
 
 export const InputCoef = () => {
   const [variablesCount, setVariablesCount] = useState<number>()
@@ -99,6 +110,15 @@ export const InputCoef = () => {
     setFuncArray(res.funcArray)
   }
 
+  const appendBaes = () => {
+    if (valueArray) {
+      const copy = valueArray.slice()
+      copy.forEach(row => {
+        row.splice(row.length - 3, 0, '1')
+      })
+    }
+  }
+
   return (
     <Container>
       {valueArray && valueArray.length && funcArray && funcArray.length && (
@@ -173,7 +193,7 @@ export const InputCoef = () => {
                     <Grid container direction={'row'}>
                       <Autocomplete
                         value={valueArray[i][coefLabels.length]}
-                        options={['<=', '>=']}
+                        options={['≤', '=', '≥']}
                         style={{ marginLeft: '8px', marginRight: '8px' }}
                         renderInput={params => (
                           <TextField {...params} label={'type'} />
@@ -191,6 +211,22 @@ export const InputCoef = () => {
               ))}
             </Grid>
           ))}
+          Использовать дроби <Checkbox onChange={InputStoreService.toggleFraction} />
+          С решением <Checkbox onChange={InputStoreService.toggleSolution} />
+
+          <Autocomplete
+              id="combo-box-demo"
+              autoComplete={false}
+              disableClearable={true}
+              options={comboItems}
+              getOptionLabel={(option) => option.title}
+              style={{ width: 300 }}
+              renderInput={params => (
+                  <TextField {...params} label="Метод решения" variant="outlined" fullWidth />
+              )}
+              onChange={(e, value) => InputStoreService.setSolveType(value.value)}
+          />
+
           <Button
             variant="contained"
             color="primary"
@@ -206,6 +242,23 @@ export const InputCoef = () => {
             }}
           >
             Решить симплекс методом
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              // appendBaes()
+              InputStoreService.setFuncArray(funcArray)
+              InputStoreService.setValueArray(valueArray)
+              if (variablesCount && rowsCount) {
+                InputStoreService.setMaxX(variablesCount+1)
+                InputStoreService.setRowCount(rowsCount)
+              }
+              InputStoreService.inputPreprocess()
+              history.push('/simplecs')
+            }}
+          >
+            Решить методом искуственного базиса
           </Button>
           <Button
             variant="contained"
