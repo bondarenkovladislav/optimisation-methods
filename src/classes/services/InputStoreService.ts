@@ -1,5 +1,6 @@
-import { array, number } from 'prop-types'
+import { SyntheticEvent } from 'react'
 
+const fs = require('fs')
 class InputStoreService {
   private valueArray: any[][] = []
   private funcArray: any[] = []
@@ -71,6 +72,24 @@ class InputStoreService {
     this.funcArray = resultFuncArr
     this.valueArray = resultValueArray
   }
+
+  public download(filename: string, text: string) {
+    var element = document.createElement('a')
+    element.setAttribute(
+      'href',
+      'data:text/plain;charset=utf-8,' + encodeURIComponent(text)
+    )
+    element.setAttribute('download', filename)
+
+    element.style.display = 'none'
+    document.body.appendChild(element)
+
+    element.click()
+
+    document.body.removeChild(element)
+  }
+
+  public onimportData = (e: any) => {}
 }
 
 export default new InputStoreService()
