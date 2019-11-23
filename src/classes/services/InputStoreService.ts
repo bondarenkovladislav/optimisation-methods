@@ -1,8 +1,9 @@
 import { SyntheticEvent } from 'react'
+import {Fraction} from "../test/FractionsHelper";
 
 const fs = require('fs')
 class InputStoreService {
-  private valueArray: any = []
+  private valueArray: { values: any[]; sign: string; b: any }[] = []
   private funcArray: any[] = []
   private maxX: number = 0
   private rowCount: number = 0
@@ -44,19 +45,19 @@ class InputStoreService {
   }
 
   public inputPreprocess = () => {
-    let resultFuncArr: number[] = []
-    let resultValueArray: { values: number[]; sign: string; b: number }[] = []
+    let resultFuncArr: any[] = []
+    let resultValueArray: { values: any[]; sign: string; b: any }[] = []
     this.valueArray.forEach((array: any, row: number) => {
-      resultValueArray[row] = { values: [], sign: '', b: 0 }
+      resultValueArray[row] = { values: [], sign: '', b: new Fraction('') }
       array.forEach((el: string, col: number) => {
         if (col === array.length - 1) {
-          resultValueArray[row].b = parseInt(el, 10)
+          resultValueArray[row].b = new Fraction(<string>el)
           return
         }
         if (el !== '≤' && el !== '≥' && el !== '=') {
           resultValueArray[row].values[
             col === this.maxX + 1 ? col - 1 : col
-          ] = parseInt(el, 10)
+          ] = new Fraction(<string>el)
         } else {
           resultValueArray[row].sign = el
         }
@@ -65,7 +66,8 @@ class InputStoreService {
 
     this.funcArray.forEach((el: any, i: number) => {
       if (el !== 'min' && el !== 'max') {
-        resultFuncArr.push(parseInt(el, 10))
+        console.log(el)
+        resultFuncArr.push(new Fraction(<string>el))
       } else {
         this.mode = el
       }

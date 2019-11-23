@@ -13,6 +13,8 @@ import { Dialog } from '@material-ui/core'
 //@ts-ignore
 import { useHistory } from 'react-router-dom'
 import InputStoreService from '../classes/services/InputStoreService'
+import {Simplecs} from "./Simplecs";
+import {Solve} from "../classes/test/1";
 
 const comboItems = [
   {
@@ -65,7 +67,7 @@ export const InputCoef = () => {
         const values = coefLabels.forEach((col, j) => {
           rowArray.push(`${j}`)
         })
-        rowArray.push('<=')
+        rowArray.push('≤')
         rowArray.push(`${100}`)
         arr.push(rowArray)
       })
@@ -238,7 +240,8 @@ export const InputCoef = () => {
                 InputStoreService.setRowCount(rowsCount)
               }
               InputStoreService.inputPreprocess()
-              history.push('/simplecs')
+              Solve()
+              // history.push('/simplecs')
             }}
           >
             Решить симплекс методом
@@ -255,7 +258,8 @@ export const InputCoef = () => {
                 InputStoreService.setRowCount(rowsCount)
               }
               InputStoreService.inputPreprocess()
-              history.push('/simplecs')
+
+              // history.push('/simplecs')
             }}
           >
             Решить методом искуственного базиса
@@ -325,6 +329,7 @@ export const InputCoef = () => {
           </DialogContent>
         </Dialog>
       )}
+      <div id={'simplex-solve'}></div>
     </Container>
   )
 }
