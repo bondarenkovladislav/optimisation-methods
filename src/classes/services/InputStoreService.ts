@@ -11,6 +11,7 @@ class InputStoreService {
   private asFraqtions: boolean = false
   private withSolveBox: boolean = false
   private solveType: number = 1
+  private autoSelectOptim: boolean = true
 
   public setValueArray = (array: any[]) => {
     this.valueArray = array
@@ -121,6 +122,14 @@ class InputStoreService {
   }
 
   public onimportData = (e: any) => {}
+
+  public toggleAutoselect = () => {
+    this.autoSelectOptim = !this.autoSelectOptim
+  }
+
+  public getAutoselect = () => {
+    return this.autoSelectOptim
+  }
 }
 
 export default new InputStoreService()

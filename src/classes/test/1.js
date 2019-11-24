@@ -1,8 +1,6 @@
 import InputStoreService from '../services/InputStoreService'
-// const Fraction = require('Fractional').Fraction
-// var Fraction = require('FractionsHelper.js')
-import {Fraction} from "./FractionsHelper";
-import {bigInt} from "./BigInt";
+import { Fraction } from './FractionsHelper'
+import { bigInt } from './BigInt'
 
 const LE = '≤'
 const EQ = '='
@@ -12,71 +10,8 @@ const MIN = 'min'
 const NEGATIVE_BASIS = false
 let NEED_LOGS = true
 const GENERATE_SAMPLES = false
-// let varsBox = document.getElementById('varsBox')
-// let restrBox = document.getElementById('restrBox')
-// let funcBox = document.getElementById('function')
-// let restrictionsBox = document.getElementById('restrictions')
 let solveBox = document.getElementById('simplex-solve')
-// let modeBox = document.getElementById('mode')
-// let solveType = document.getElementById('solveType')
-// let withSolveBox = document.getElementById('withSolveBox')
-// let asFraqtions = document.getElementById('asFraqtions')
 let printMode = 1
-let historyValues = null
-// $('#withSolveBox').change(function() {
-//   $('#solveType').slideToggle()
-// })
-function SetInputFilter(textbox, inputFilter) {
-  ;[
-    'input',
-    'keydown',
-    'keyup',
-    'mousedown',
-    'mouseup',
-    'select',
-    'contextmenu',
-  ].forEach(function(event) {
-    textbox.addEventListener(event, function() {
-      if (inputFilter(this.value)) {
-        this.oldValue = this.value
-        this.oldSelectionStart = this.selectionStart
-        this.oldSelectionEnd = this.selectionEnd
-      } else if (this.hasOwnProperty('oldValue')) {
-        this.value = this.oldValue
-        this.setSelectionRange(this.oldSelectionStart, this.oldSelectionEnd)
-      }
-    })
-  })
-}
-function InputFilter(value) {
-  return /^-?\d*([\.\/]\d*)?$/.test(value)
-}
-// function updateScrollblocks() {
-//   $('.scroll-block').each(function() {
-//     if ($(this)[0].scrollWidth > $(this).width() + 1)
-//       $(this).addClass('scroll-block-img')
-//     else $(this).removeClass('scroll-block-img')
-//   })
-// }
-// function updateHideOpenBlock() {
-//   $('.ho-block-text').off('click')
-//   $('.ho-block-text').click(function() {
-//     $(this)
-//       .siblings('.ho-block-content')
-//       .slideToggle()
-//     $(this)
-//       .find('.fa')
-//       .toggleClass('fa-caret-down')
-//       .toggleClass('fa-caret-right')
-//     updateScrollblocks()
-//   })
-// }
-// function scrollTo(selector) {
-//   window.scroll({
-//     top: $(selector).offset().top - $('.menu2').outerHeight(),
-//     behavior: 'smooth',
-//   })
-// }
 function CreateHideOpenBlock(text, content) {
   let html = "<div class='hide-open-block'>"
   html +=
@@ -90,461 +25,6 @@ function CreateHideOpenBlock(text, content) {
 function CreateScrollBlock(text) {
   return "<div class='scroll-block'>" + text + '</div>'
 }
-// function IniFunctionBox(n) {
-//   while (funcBox.children.length > 0) funcBox.children[0].remove()
-//   for (let i = 0; i < n; i++) {
-//     let elem = document.createElement('input')
-//     elem.style.width = '45px'
-//     elem.id = 'var' + i
-//     elem.placeholder = '0'
-//     elem.inputMode = 'numeric'
-//     elem.autocomplete = 'off'
-//     let name = document.createElement('span')
-//     name.innerHTML = ' x<sub>' + (i + 1) + '</sub> ' + (i == n - 1 ? '' : '+ ')
-//     funcBox.appendChild(elem)
-//     funcBox.appendChild(name)
-//   }
-// }
-// function InitRestrictions(n, m) {
-//   while (restrictionsBox.children.length > 0)
-//     restrictionsBox.children[0].remove()
-//   for (let i = 0; i < m; i++) {
-//     let rest = document.createElement('div')
-//     rest.id = 'rest-' + i + '-box'
-//     rest.className = 'restriction-div'
-//     for (let j = 0; j < n; j++) {
-//       let elem = document.createElement('input')
-//       elem.style.width = '45px'
-//       elem.id = 'rest-' + i + '-' + j
-//       elem.placeholder = '0'
-//       elem.inputMode = 'numeric'
-//       elem.autocomplete = 'off'
-//       let name = document.createElement('span')
-//       name.innerHTML =
-//         ' x<sub>' + (j + 1) + '</sub> ' + (j == n - 1 ? '' : '+ ')
-//       rest.appendChild(elem)
-//       rest.appendChild(name)
-//     }
-//     let select = document.createElement('select')
-//     select.id = 'cond-' + i
-//     let options = [LE, EQ, GE]
-//     for (let j = 0; j < options.length; j++) {
-//       let option = document.createElement('option')
-//       option.text = options[j]
-//       option.value = options[j]
-//       select.appendChild(option)
-//     }
-//     rest.appendChild(select)
-//     let elem = document.createElement('input')
-//     elem.style.width = '45px'
-//     elem.id = 'rest-' + i + '-value'
-//     elem.style.textAlign = 'left'
-//     elem.placeholder = '0'
-//     elem.inputMode = 'numeric'
-//     elem.autocomplete = 'off'
-//     rest.innerHTML += ' '
-//     rest.appendChild(elem)
-//     restrictionsBox.appendChild(rest)
-//   }
-//   let names = document.createElement('span')
-//   for (let i = 0; i < n - 1; i++)
-//     names.innerHTML += 'x<sub>' + (i + 1) + '</sub>, '
-//   names.innerHTML += 'x<sub>' + n + '</sub> &ge; 0'
-//   let block = document.getElementById('rest-vars')
-//   while (block.children.length > 0) block.children[0].remove()
-//   block.appendChild(names)
-// }
-// function MoveCell(cell, e) {
-//   let id = cell.id
-//   let n = +varsBox.value
-//   let m = +restrBox.value
-//   var text = cell.value
-//   var start = cell.selectionStart
-//   var end = cell.selectionEnd
-//   var min = Math.min(start, end)
-//   var max = Math.max(start, end)
-//   var len = Math.abs(start - end)
-//   if (id.substr(0, 3) == 'var') {
-//     let index = +id.substr(3)
-//     if (e.key == 'ArrowRight') index = (index + 1) % n
-//     else if (e.key == 'ArrowLeft') index = (index - 1 + n) % n
-//     id = 'var' + index
-//   } else {
-//     let args = id.split('-')
-//     let row = +args[1]
-//     let column = args[2] == 'value' ? n : +args[2]
-//     let index = row * (n + 1) + column
-//     let total = (n + 1) * m
-//     if (e.key == 'ArrowRight' && max == text.length) {
-//       index = (index + 1) % total
-//     } else if (e.key == 'ArrowLeft' && min == 0) {
-//       index = (index - 1 + total) % total
-//     } else if (e.key == 'ArrowDown') {
-//       row++
-//       column = (column + Math.floor(row / m)) % (n + 1)
-//       row = row % m
-//       index = row * (n + 1) + column
-//     } else if (e.key == 'ArrowUp') {
-//       row--
-//       column = (column - (row == -1 ? 1 : 0) + n + 1) % (n + 1)
-//       row = (row + m) % m
-//       index = row * (n + 1) + column
-//     }
-//     row = Math.floor(index / (n + 1))
-//     column = index % (n + 1)
-//     if (column < n) {
-//       id = 'rest-' + row + '-' + column
-//     } else {
-//       id = 'rest-' + row + '-value'
-//     }
-//   }
-//   if (cell.id == id) return
-//   let elem = document.getElementById(id)
-//   elem.focus()
-//   text = elem.value
-//   if (e.key == 'ArrowLeft') {
-//     elem.selectionStart = text.length
-//     elem.selectionEnd = text.length
-//   } else {
-//     elem.selectionStart = 0
-//     elem.selectionEnd = 0
-//   }
-// }
-// function SaveValues() {
-//   let func = []
-//   for (let i = 0; i < funcBox.children.length; i += 2)
-//     func.push(funcBox.children[i].value)
-//   let restrictions = []
-//   let free = []
-//   for (let i = 0; i < restrictionsBox.children.length; i++) {
-//     restrictions[i] = []
-//     for (let j = 0; j < restrictionsBox.children[i].children.length - 2; j += 2)
-//       restrictions[i].push(restrictionsBox.children[i].children[j].value)
-//     free.push(
-//       restrictionsBox.children[i].children[
-//         restrictionsBox.children[i].children.length - 1
-//       ].value
-//     )
-//   }
-//   return { func: func, restrictions: restrictions, free: free }
-// }
-// function InitTable() {
-//   if (varsBox.value == '' || restrBox.value == '') return
-//   let n = +varsBox.value
-//   let m = +restrBox.value
-//   if (n < 1 || m < 1) return
-//   historyValues = SaveValues()
-//   IniFunctionBox(n)
-//   InitRestrictions(n, m)
-//   for (let i = 0; i < n; i++) {
-//     let func = document.getElementById('var' + i)
-//     SetInputFilter(func, InputFilter)
-//     func.addEventListener(
-//       'keydown',
-//       event => {
-//         MoveCell(func, event)
-//       },
-//       false
-//     )
-//     if (i < historyValues.func.length && historyValues.func[i] != '')
-//       func.value = historyValues.func[i]
-//   }
-//   for (let i = 0; i < m; i++) {
-//     let value = document.getElementById('rest-' + i + '-value')
-//     SetInputFilter(value, InputFilter)
-//     value.addEventListener(
-//       'keydown',
-//       event => {
-//         MoveCell(value, event)
-//       },
-//       false
-//     )
-//     if (i < historyValues.free.length && historyValues.free[i] != '')
-//       value.value = historyValues.free[i]
-//     for (let j = 0; j < n; j++) {
-//       let rest = document.getElementById('rest-' + i + '-' + j)
-//       SetInputFilter(rest, InputFilter)
-//       rest.addEventListener(
-//         'keydown',
-//         event => {
-//           MoveCell(rest, event)
-//         },
-//         false
-//       )
-//       if (
-//         i < historyValues.restrictions.length &&
-//         j < historyValues.restrictions[i].length &&
-//         historyValues.restrictions[i][j] != ''
-//       )
-//         rest.value = historyValues.restrictions[i][j]
-//     }
-//   }
-// }
-// function Clear() {
-//   if (!confirm('Вы уверены, что хотите всё удалить?')) return
-//   let n = +varsBox.value
-//   let m = +restrBox.value
-//   for (let i = 0; i < n; i++) document.getElementById('var' + i).value = ''
-//   for (let i = 0; i < m; i++) {
-//     document.getElementById('rest-' + i + '-value').value = ''
-//     for (let j = 0; j < n; j++)
-//       document.getElementById('rest-' + i + '-' + j).value = ''
-//   }
-//   solveBox.innerHTML = ''
-// }
-// function SetSizes(n, m) {
-//   varsBox.value = n
-//   restrBox.value = m
-//   IniFunctionBox(n)
-//   InitRestrictions(n, m)
-// }
-function SetFunctionValue(i, value) {
-  document.getElementById('var' + i).value = value
-}
-function SetRestrictionValue(j, i, value) {
-  document.getElementById('rest-' + j + '-' + i).value = value
-}
-function SetFreeRestrictionValue(i, value) {
-  document.getElementById('rest-' + i + '-value').value = value
-}
-function SetRestrictionMode(i, mode) {
-  document.getElementById('cond-' + i).value = mode
-}
-function SetFunctionMode(mode) {
-  document.getElementById('mode').value = mode
-}
-// function SetInitValues(k = 1) {
-//   let n = +varsBox.value
-//   let m = +restrBox.value
-//   if (k == 1) {
-//     SetSizes(3, 3)
-//     SetFunctionValue(0, 4)
-//     SetFunctionValue(1, 5)
-//     SetFunctionValue(2, 4)
-//     SetRestrictionValue(0, 0, 2)
-//     SetRestrictionValue(0, 1, 3)
-//     SetRestrictionValue(0, 2, 6)
-//     SetRestrictionMode(0, GE)
-//     SetFreeRestrictionValue(0, 240)
-//     SetRestrictionValue(1, 0, 4)
-//     SetRestrictionValue(1, 1, 2)
-//     SetRestrictionValue(1, 2, 4)
-//     SetRestrictionMode(1, LE)
-//     SetFreeRestrictionValue(1, 200)
-//     SetRestrictionValue(2, 0, 4)
-//     SetRestrictionValue(2, 1, 6)
-//     SetRestrictionValue(2, 2, 8)
-//     SetRestrictionMode(2, EQ)
-//     SetFreeRestrictionValue(2, 160)
-//     SetFunctionMode(MAX)
-//   } else if (k == 2) {
-//     SetSizes(3, 3)
-//     SetFunctionValue(0, 20)
-//     SetFunctionValue(1, 20)
-//     SetFunctionValue(2, 10)
-//     SetRestrictionValue(0, 0, 4)
-//     SetRestrictionValue(0, 1, 3)
-//     SetRestrictionValue(0, 2, 2)
-//     SetRestrictionMode(0, GE)
-//     SetFreeRestrictionValue(0, 33)
-//     SetRestrictionValue(1, 0, 3)
-//     SetRestrictionValue(1, 1, 2)
-//     SetRestrictionValue(1, 2, 1)
-//     SetRestrictionMode(1, GE)
-//     SetFreeRestrictionValue(1, 23)
-//     SetRestrictionValue(2, 0, 1)
-//     SetRestrictionValue(2, 1, 1)
-//     SetRestrictionValue(2, 2, 2)
-//     SetRestrictionMode(2, GE)
-//     SetFreeRestrictionValue(2, 12)
-//     SetFunctionMode(MIN)
-//   } else if (k == 3) {
-//     SetSizes(3, 3)
-//     SetFunctionValue(0, 2)
-//     SetFunctionValue(1, 1)
-//     SetFunctionValue(2, -2)
-//     SetRestrictionValue(0, 0, 1)
-//     SetRestrictionValue(0, 1, 1)
-//     SetRestrictionValue(0, 2, -1)
-//     SetRestrictionMode(0, GE)
-//     SetFreeRestrictionValue(0, 8)
-//     SetRestrictionValue(1, 0, 1)
-//     SetRestrictionValue(1, 1, -1)
-//     SetRestrictionValue(1, 2, 2)
-//     SetRestrictionMode(1, GE)
-//     SetFreeRestrictionValue(1, 2)
-//     SetRestrictionValue(2, 0, -2)
-//     SetRestrictionValue(2, 1, -8)
-//     SetRestrictionValue(2, 2, 3)
-//     SetRestrictionMode(2, GE)
-//     SetFreeRestrictionValue(2, 1)
-//     SetFunctionMode(MIN)
-//   } else if (k == 4) {
-//     SetSizes(6, 3)
-//     let f = [3, 0, 2, 0, 0, -6]
-//     let r = [[2, 1, -3, 0, 0, 6], [-3, 0, 2, 1, 0, -2], [1, 0, 3, 0, 5, -4]]
-//     let b = [18, 24, 36]
-//     let signs = [EQ, EQ, EQ]
-//     for (let i = 0; i < f.length; i++) SetFunctionValue(i, f[i])
-//     for (let i = 0; i < r.length; i++) {
-//       for (let j = 0; j < r[i].length; j++) SetRestrictionValue(i, j, r[i][j])
-//       SetFreeRestrictionValue(i, b[i])
-//       SetRestrictionMode(i, signs[i])
-//     }
-//   } else if (k == 5) {
-//     SetSizes(2, 2)
-//     SetFunctionValue(0, 1)
-//     SetFunctionValue(1, 2)
-//     SetFunctionMode(MAX)
-//     SetRestrictionValue(0, 0, 1)
-//     SetRestrictionValue(0, 1, 1)
-//     SetRestrictionMode(0, EQ)
-//     SetFreeRestrictionValue(0, 1)
-//     SetRestrictionValue(1, 0, 2)
-//     SetRestrictionValue(1, 1, 2)
-//     SetRestrictionMode(1, EQ)
-//     SetFreeRestrictionValue(1, 2)
-//   } else if (k == 6) {
-//     SetSizes(5, 3)
-//     SetFunctionValue(0, 9)
-//     SetFunctionValue(1, 5)
-//     SetFunctionValue(2, 4)
-//     SetFunctionValue(3, 3)
-//     SetFunctionValue(4, 2)
-//     SetFunctionMode(MAX)
-//     SetRestrictionValue(0, 0, 1)
-//     SetRestrictionValue(0, 1, -2)
-//     SetRestrictionValue(0, 2, 2)
-//     SetRestrictionValue(0, 3, 0)
-//     SetRestrictionValue(0, 4, 0)
-//     SetRestrictionMode(0, LE)
-//     SetFreeRestrictionValue(0, 6)
-//     SetRestrictionValue(1, 0, 1)
-//     SetRestrictionValue(1, 1, 2)
-//     SetRestrictionValue(1, 2, 1)
-//     SetRestrictionValue(1, 3, 1)
-//     SetRestrictionValue(1, 4, 0)
-//     SetRestrictionMode(1, EQ)
-//     SetFreeRestrictionValue(1, 24)
-//     SetRestrictionValue(2, 0, 2)
-//     SetRestrictionValue(2, 1, 1)
-//     SetRestrictionValue(2, 2, -4)
-//     SetRestrictionValue(2, 3, 0)
-//     SetRestrictionValue(2, 4, 1)
-//     SetRestrictionMode(2, EQ)
-//     SetFreeRestrictionValue(2, 30)
-//   } else if (k == 7) {
-//     SetSizes(5, 3)
-//     SetFunctionValue(0, 0)
-//     SetFunctionValue(1, 0)
-//     SetFunctionValue(2, 3)
-//     SetFunctionValue(3, -2)
-//     SetFunctionValue(4, -1)
-//     SetFunctionMode(MAX)
-//     SetRestrictionValue(0, 0, 2)
-//     SetRestrictionValue(0, 1, 1)
-//     SetRestrictionValue(0, 2, 1)
-//     SetRestrictionValue(0, 3, 1)
-//     SetRestrictionValue(0, 4, 3)
-//     SetRestrictionMode(0, EQ)
-//     SetFreeRestrictionValue(0, 5)
-//     SetRestrictionValue(1, 0, 3)
-//     SetRestrictionValue(1, 1, 0)
-//     SetRestrictionValue(1, 2, 2)
-//     SetRestrictionValue(1, 3, -1)
-//     SetRestrictionValue(1, 4, 6)
-//     SetRestrictionMode(1, EQ)
-//     SetFreeRestrictionValue(1, 7)
-//     SetRestrictionValue(2, 0, 1)
-//     SetRestrictionValue(2, 1, 0)
-//     SetRestrictionValue(2, 2, -3)
-//     SetRestrictionValue(2, 3, 2)
-//     SetRestrictionValue(2, 4, 1)
-//     SetRestrictionMode(2, EQ)
-//     SetFreeRestrictionValue(2, 2)
-//   } else if (k == 8) {
-//     SetSizes(3, 3)
-//     SetFunctionValue(0, 1)
-//     SetFunctionValue(1, -1)
-//     SetFunctionValue(2, 0)
-//     SetFunctionMode(MIN)
-//     SetRestrictionValue(0, 0, 2)
-//     SetRestrictionValue(0, 1, 1)
-//     SetRestrictionValue(0, 2, 3)
-//     SetRestrictionMode(0, EQ)
-//     SetFreeRestrictionValue(0, 1)
-//     SetRestrictionValue(1, 0, 1)
-//     SetRestrictionValue(1, 1, -3)
-//     SetRestrictionValue(1, 2, 1)
-//     SetRestrictionMode(1, EQ)
-//     SetFreeRestrictionValue(1, -3)
-//     SetRestrictionValue(2, 0, 1)
-//     SetRestrictionValue(2, 1, 11)
-//     SetRestrictionValue(2, 2, 3)
-//     SetRestrictionMode(2, EQ)
-//     SetFreeRestrictionValue(2, 11)
-//   } else if (k == 9) {
-//     SetSizes(3, 3)
-//     SetFunctionValue(0, 3)
-//     SetFunctionValue(1, 2)
-//     SetFunctionValue(2, 3)
-//     SetFunctionMode(MIN)
-//     SetRestrictionValue(0, 0, 2)
-//     SetRestrictionValue(0, 1, 1)
-//     SetRestrictionValue(0, 2, 1)
-//     SetRestrictionMode(0, LE)
-//     SetFreeRestrictionValue(0, 2)
-//     SetRestrictionValue(1, 0, 3)
-//     SetRestrictionValue(1, 1, 8)
-//     SetRestrictionValue(1, 2, 2)
-//     SetRestrictionMode(1, GE)
-//     SetFreeRestrictionValue(1, 8)
-//     SetRestrictionValue(2, 0, 0)
-//     SetRestrictionValue(2, 1, 0)
-//     SetRestrictionValue(2, 2, 1)
-//     SetRestrictionMode(2, GE)
-//     SetFreeRestrictionValue(2, 1)
-//   }
-// }
-// function GetFunctionCoefficients(n) {
-//   let func = []
-//   for (let i = 0; i < n; i++) {
-//     let field = document.getElementById('var' + i)
-//     try {
-//       func.push(new Fraction(field.value))
-//     } catch (e) {
-//       field.focus()
-//       throw e
-//     }
-//   }
-//   return func
-// }
-// function GetRestrictCoefficients(n, m) {
-//   let restricts = []
-//   for (let i = 0; i < m; i++) {
-//     restricts[i] = {
-//       values: [],
-//       sign: document.getElementById('cond-' + i).value,
-//     }
-//     for (let j = 0; j < n; j++) {
-//       let field = document.getElementById('rest-' + i + '-' + j)
-//       try {
-//         restricts[i].values.push(new Fraction(field.value))
-//       } catch (e) {
-//         field.focus()
-//         throw e
-//       }
-//     }
-//     let field = document.getElementById('rest-' + i + '-value')
-//     try {
-//       restricts[i].b = new Fraction(field.value)
-//     } catch (e) {
-//       field.focus()
-//       throw e
-//     }
-//   }
-//   return restricts
-// }
 function PrintFunction(func) {
   let html = ''
   let start = false
@@ -1019,24 +499,28 @@ function CheckPlanSolve(simplex) {
 }
 function GetColumn(simplex) {
   let jmax = 0
-  for (let j = 1; j < simplex.total; j++) {
-    if (simplex.mode == MAX && simplex.deltas[j].lt(simplex.deltas[jmax]))
-      jmax = j
-    else if (simplex.mode == MIN && simplex.deltas[j].gt(simplex.deltas[jmax]))
-      jmax = j
+  if(InputStoreService.getAutoselect()) {
+    for (let j = 1; j < simplex.total; j++) {
+      if (simplex.mode == MAX && simplex.deltas[j].lt(simplex.deltas[jmax]))
+        jmax = j
+      else if (simplex.mode == MIN && simplex.deltas[j].gt(simplex.deltas[jmax]))
+        jmax = j
+    }
   }
   return jmax
 }
 function GetQandRow(simplex, j) {
   let imin = -1
-  for (let i = 0; i < simplex.m; i++) {
-    simplex.Q[i] = null
-    if (simplex.table[i][j].isZero()) continue
-    let q = simplex.b[i].div(simplex.table[i][j])
-    if (q.isNeg() || (simplex.b[i].isZero() && simplex.table[i][j].isNeg()))
-      continue
-    simplex.Q[i] = q
-    if (imin == -1 || q.lt(simplex.Q[imin])) imin = i
+  if(InputStoreService.getAutoselect()) {
+    for (let i = 0; i < simplex.m; i++) {
+      simplex.Q[i] = null
+      if (simplex.table[i][j].isZero()) continue
+      let q = simplex.b[i].div(simplex.table[i][j])
+      if (q.isNeg() || (simplex.b[i].isZero() && simplex.table[i][j].isNeg()))
+        continue
+      simplex.Q[i] = q
+      if (imin == -1 || q.lt(simplex.Q[imin])) imin = i
+    }
   }
   return imin
 }
@@ -1164,41 +648,42 @@ function InputToString(func, mode, restrictions) {
   }
   return s
 }
-function SolveTable(n, m, func, restricts, mode) {
-  let html = ''
-  if (!NEGATIVE_BASIS) html += ChangeSigns(restricts)
+function SolveTable(n, m, func, restricts, mode, html) {
+  html.innerHTML = ''
+  // let html = ''
+  if (!NEGATIVE_BASIS) html.innerHTML += ChangeSigns(restricts)
   let init = PrepareTable(n, m, func, restricts, mode)
-  html += init.html
+  html.innerHTML += init.html
   let simplex = init.simplex
-  html += '<b>Начальная симплекс-таблица</b>'
-  html += PrintTable(simplex)
+  html.innerHTML += '<b>Начальная симплекс-таблица</b>'
+  html.innerHTML += PrintTable(simplex)
   let res = true
-  if (!CheckBasis(simplex)) html += FindBasis(simplex)
+  if (!CheckBasis(simplex)) html.innerHTML += FindBasis(simplex)
   if (!CheckBasis(simplex)) {
     return { answer: 'Решение задачи не существует.', solve: html }
   }
   while (HaveNegativeB(simplex) && res) {
-    html += 'В столбце b присутствуют отрицательные значения.<br>'
+    html.innerHTML += 'В столбце b присутствуют отрицательные значения.<br>'
     res = CheckSolveNegativeB(simplex)
-    html += RemoveNegativeB(simplex)
+    html.innerHTML += RemoveNegativeB(simplex)
   }
   if (!res) {
     return { answer: 'Решение задачи не существует.', solve: html }
   }
   CalculateDeltas(simplex)
-  html += '<b>Вычисляем дельты:</b> '
-  html += CalculateDeltasSolve(simplex)
-  html += '<b>Симплекс-таблица с дельтами</b>'
-  html += PrintTable(simplex)
+  html.innerHTML += '<b>Вычисляем дельты:</b> '
+  html.innerHTML += CalculateDeltasSolve(simplex)
+  html.innerHTML += '<b>Симплекс-таблица с дельтами</b>'
+  html.innerHTML += PrintTable(simplex)
   let iteration = 1
-  html += CheckPlanSolve(simplex)
+  html.innerHTML += CheckPlanSolve(simplex)
   while (!CheckPlan(simplex)) {
-    html += '<h3>Итерация ' + iteration + '</h3>'
+    html.innerHTML += '<h3>Итерация ' + iteration + '</h3>'
     let column = GetColumn(simplex)
-    html +=
+    html.innerHTML +=
       'Определяем <i>разрешающий столбец</i> - столбец, в котором находится '
-    html += (simplex.mode == MAX ? 'минимальная' : 'максимальная') + ' дельта: '
-    html +=
+    html.innerHTML += (simplex.mode == MAX ? 'минимальная' : 'максимальная') + ' дельта: '
+    html.innerHTML +=
       column +
       1 +
       ', &Delta;<sub>' +
@@ -1206,50 +691,50 @@ function SolveTable(n, m, func, restricts, mode) {
       '</sub>: ' +
       simplex.deltas[column].print(printMode) +
       '<br>'
-    html +=
+    html.innerHTML +=
       'Находим симплекс-отношения Q, путём деления коэффициентов b на соответствующие значения столбца ' +
       (column + 1) +
       '<br>'
     let row = GetQandRow(simplex, column)
     if (row == -1) {
-      html += PrintTable(simplex, -1, column)
-      html += 'Все значения столбца ' + (column + 1) + ' неположительны.<br>'
-      html +=
+      html.innerHTML += PrintTable(simplex, -1, column)
+      html.innerHTML += 'Все значения столбца ' + (column + 1) + ' неположительны.<br>'
+      html.innerHTML +=
         '<b>Функция не ограничена. Оптимальное решение отсутствует</b>.<br>'
       return {
         answer: 'Функция не ограничена. Оптимальное решение отсутствует.',
         solve: html,
       }
     }
-    html +=
+    html.innerHTML +=
       'В найденном столбце ищем строку с наименьшим значением Q: Q<sub>min</sub> = ' +
       simplex.Q[row].print(printMode) +
       ', строка ' +
       (row + 1) +
       '.<br>'
-    html +=
+    html.innerHTML +=
       'На пересечении найденных строки и столбца находится <i>разрешающий элемент</i>: ' +
       simplex.table[row][column].print(printMode) +
       '<br>'
-    html += MakeVarBasis(simplex, row, column, true)
+    html.innerHTML += MakeVarBasis(simplex, row, column, true)
     CalculateDeltas(simplex)
-    html += '<b>Вычисляем новые дельты:</b> '
-    html += CalculateDeltasSolve(simplex)
-    html += '<b>Симплекс-таблица с обновлёнными дельтами</b>'
-    html += PrintTable(simplex)
+    html.innerHTML += '<b>Вычисляем новые дельты:</b> '
+    html.innerHTML += CalculateDeltasSolve(simplex)
+    html.innerHTML += '<b>Симплекс-таблица с обновлёнными дельтами</b>'
+    html.innerHTML += PrintTable(simplex)
     let F = CalcFunction(simplex)
-    html += '<b>Текущий план X:</b> ' + F.plan + '<br>'
-    html +=
+    html.innerHTML += '<b>Текущий план X:</b> ' + F.plan + '<br>'
+    html.innerHTML +=
       '<b>Целевая функция F:</b> ' +
       F.solve +
       ' = ' +
       F.result.print(printMode) +
       '<br>'
     iteration++
-    html += CheckPlanSolve(simplex)
+    html.innerHTML += CheckPlanSolve(simplex)
   }
   if (HaveNegativeB(simplex)) {
-    html +=
+    html.innerHTML +=
       'В столбце b присутствуют отрицательные значения. Решения не существует.'
     return {
       answer:
@@ -1257,9 +742,9 @@ function SolveTable(n, m, func, restricts, mode) {
       solve: html,
     }
   }
-  html += '<b>Ответ:</b> '
+  html.innerHTML += '<b>Ответ:</b> '
   let answer = PrintAnswer(simplex)
-  return { answer: answer, solve: html + answer + '<br>' }
+  return { answer: answer }
 }
 function PrintAM(C, brackets = false) {
   if (C.a.isZero() && C.m.isZero()) return '0'
@@ -1869,8 +1354,7 @@ function HaveArtificialBasis(simplex, zero = true) {
       return true
   return false
 }
-function SolveArtificialBasis(n, m, func, restricts, mode) {
-  let html = ''
+function SolveArtificialBasis(n, m, func, restricts, mode, html) {
   html += ChangeSignsArtificialBasis(restricts)
   let init = PrepareArtificialBasis(n, m, func, restricts, mode)
   let simplex = init.simplex
@@ -1963,19 +1447,12 @@ function SolveArtificialBasis(n, m, func, restricts, mode) {
 export function Solve() {
   try {
     let solveBox = document.getElementById('simplex-solve')
-    // let n = +varsBox.value
     let n = InputStoreService.getMaxX()
-    // let m = +restrBox.value
     let m = InputStoreService.getRowCount()
-    // let mode = modeBox.value
     let mode = InputStoreService.getMode()
-    // let func = GetFunctionCoefficients(n)
     let func = InputStoreService.getFuncArray()
-    // let restricts = GetRestrictCoefficients(n, m)
     let restricts = InputStoreService.getValueArray()
-    // printMode = asFraqtions.checked ? 1 : 2
     printMode = InputStoreService.getFraction() ? 1 : 2
-    console.log(func)
     solveBox.innerHTML = '<h3>Введённые данные</h3>'
     solveBox.innerHTML += "<div class='scroll-block'>"
     solveBox.innerHTML += PrintFunction(func)
@@ -1991,86 +1468,31 @@ export function Solve() {
     let result
     if (InputStoreService.getSolution()) {
       if (InputStoreService.getSolveType() == 1) {
-        result = SolveTable(n, m, func, restricts, mode)
+        result = SolveTable(n, m, func, restricts, mode, solveBox)
         solveBox.innerHTML +=
           '<h3>Ответ</h3>' + CreateScrollBlock(result.answer)
-        solveBox.innerHTML +=
-          '<h3>Решение базовым симплекс-методом</h3> ' + result.solve
+        // solveBox.innerHTML +=
+        //   '<h3>Решение базовым симплекс-методом</h3> ' + result.solve
       } else {
-        result = SolveArtificialBasis(n, m, func, restricts, mode)
+        result = SolveArtificialBasis(n, m, func, restricts, mode, solveBox)
         solveBox.innerHTML +=
           '<h3>Ответ</h3>' + CreateScrollBlock(result.answer)
         solveBox.innerHTML +=
           '<h3>Решение методом искусственного базиса</h3> ' + result.solve
       }
     } else {
-      result = SolveTable(n, m, func, restricts, mode)
+      const div = document.createElement('div')
+      result = SolveTable(n, m, func, restricts, mode, div)
       solveBox.innerHTML += '<h3>Ответ</h3>' + CreateScrollBlock(result.answer)
     }
     // updateScrollblocks()
     // scrollTo('#simplex-solve')
-    console.log(InputToString(func, mode, restricts))
-    console.log(
-      result.answer.replace(/\<sub\>/gi, '').replace(/\<\/sub\>/gi, '')
-    )
+    // console.log(InputToString(func, mode, restricts))
+    // console.log(
+    //   result.answer.replace(/\<sub\>/gi, '').replace(/\<\/sub\>/gi, '')
+    // )
   } catch (e) {
     alert('Ошибка: ' + e)
   }
   // updateHideOpenBlock()
 }
-// function GenerateSimples() {
-//   let calc = document.getElementsByClassName('simplex')[0]
-//   calc.appendChild(document.createElement('hr'))
-//   for (let i = 1; i <= 7; i++) {
-//     let input = document.createElement('div')
-//     input.innerHTML = 'Пример ' + i
-//     input.className = 'simplex-btn'
-//     input.style.marginRight = '5px'
-//     input.style.fontSize = '8pt'
-//     input.onclick = function() {
-//       // SetInitValues(i)
-//       Solve()
-//     }
-//     calc.appendChild(input)
-//   }
-// }
-// function MakeDual() {
-//   let n = InputStoreService.getMaxX()
-//   let m = InputStoreService.getRowCount()
-//   let mode = InputStoreService.getMode()
-//   let func = InputStoreService.getFuncArray()
-//
-//   for (let i = 0; i < m; i++) {
-//     if (restricts[i].sign == EQ) {
-//       alert(
-//         'Невозможно сделать двойственной задачу, содержащую ограничения с равенством'
-//       )
-//       return
-//     }
-//   }
-//   SetSizes(m, n)
-//   for (let i = 0; i < m; i++) {
-//     let field = document.getElementById('var' + i)
-//     field.value = restricts[i].b
-//   }
-//   for (let i = 0; i < n; i++) {
-//     let field = document.getElementById('rest-' + i + '-value')
-//     field.value = func[i]
-//   }
-//   for (let i = 0; i < n; i++) {
-//     for (let j = 0; j < m; j++) {
-//       let field = document.getElementById('rest-' + i + '-' + j)
-//       field.value = restricts[j].values[i]
-//     }
-//   }
-//   for (let i = 0; i < n; i++) {
-//     let field = document.getElementById('cond-' + i)
-//     if (restricts[i].sign == LE) field.value = GE
-//     else if (restricts[i].sign == GE) field.value = LE
-//   }
-//   if (mode == MAX) modeBox.value = MIN
-//   else modeBox.value = MAX
-// }
-// updateHideOpenBlock()
-// InitTable()
-// if (GENERATE_SAMPLES) GenerateSimples()

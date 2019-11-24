@@ -215,6 +215,7 @@ export const InputCoef = () => {
           ))}
           Использовать дроби <Checkbox onChange={InputStoreService.toggleFraction} />
           С решением <Checkbox onChange={InputStoreService.toggleSolution} />
+          Ручноый выбор оптимального элеемнта <Checkbox onChange={InputStoreService.toggleAutoselect} />
 
           <Autocomplete
               id="combo-box-demo"
@@ -244,25 +245,7 @@ export const InputCoef = () => {
               // history.push('/simplecs')
             }}
           >
-            Решить симплекс методом
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => {
-              // appendBaes()
-              InputStoreService.setFuncArray(funcArray)
-              InputStoreService.setValueArray(valueArray)
-              if (variablesCount && rowsCount) {
-                InputStoreService.setMaxX(variablesCount+1)
-                InputStoreService.setRowCount(rowsCount)
-              }
-              InputStoreService.inputPreprocess()
-
-              // history.push('/simplecs')
-            }}
-          >
-            Решить методом искуственного базиса
+            Решить
           </Button>
           <Button
             variant="contained"
