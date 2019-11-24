@@ -14,7 +14,12 @@ import { Dialog } from '@material-ui/core'
 import { useHistory } from 'react-router-dom'
 import InputStoreService from '../classes/services/InputStoreService'
 import {Simplecs} from "./Simplecs";
-import {Solve} from "../classes/test/1";
+import {init} from "../classes/test/1";
+
+declare global {
+  interface Window { Solve: any; }
+}
+
 
 const comboItems = [
   {
@@ -241,7 +246,8 @@ export const InputCoef = () => {
                 InputStoreService.setRowCount(rowsCount)
               }
               InputStoreService.inputPreprocess()
-              Solve()
+              init()
+              window.Solve()
               // history.push('/simplecs')
             }}
           >
@@ -312,7 +318,7 @@ export const InputCoef = () => {
           </DialogContent>
         </Dialog>
       )}
-      <div id={'simplex-solve'}></div>
+      {/*<div id={'simplex-solve'}></div>*/}
     </Container>
   )
 }

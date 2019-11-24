@@ -12,6 +12,7 @@ let NEED_LOGS = true
 const GENERATE_SAMPLES = false
 let solveBox = document.getElementById('simplex-solve')
 let printMode = 1
+let resultAnswer = null
 function CreateHideOpenBlock(text, content) {
   let html = "<div class='hide-open-block'>"
   html +=
@@ -499,11 +500,14 @@ function CheckPlanSolve(simplex) {
 }
 function GetColumn(simplex) {
   let jmax = 0
-  if(InputStoreService.getAutoselect()) {
+  if (InputStoreService.getAutoselect()) {
     for (let j = 1; j < simplex.total; j++) {
       if (simplex.mode == MAX && simplex.deltas[j].lt(simplex.deltas[jmax]))
         jmax = j
-      else if (simplex.mode == MIN && simplex.deltas[j].gt(simplex.deltas[jmax]))
+      else if (
+        simplex.mode == MIN &&
+        simplex.deltas[j].gt(simplex.deltas[jmax])
+      )
         jmax = j
     }
   }
@@ -511,7 +515,7 @@ function GetColumn(simplex) {
 }
 function GetQandRow(simplex, j) {
   let imin = -1
-  if(InputStoreService.getAutoselect()) {
+  if (InputStoreService.getAutoselect()) {
     for (let i = 0; i < simplex.m; i++) {
       simplex.Q[i] = null
       if (simplex.table[i][j].isZero()) continue
@@ -677,12 +681,21 @@ function SolveTable(n, m, func, restricts, mode, html) {
   html.innerHTML += PrintTable(simplex)
   let iteration = 1
   html.innerHTML += CheckPlanSolve(simplex)
-  while (!CheckPlan(simplex)) {
+  step(simplex, html, iteration)
+}
+
+function onClick() {
+  console.log('hey')
+}
+
+function step(simplex, html, iteration) {
+  if (!CheckPlan(simplex)) {
     html.innerHTML += '<h3>Итерация ' + iteration + '</h3>'
     let column = GetColumn(simplex)
     html.innerHTML +=
       'Определяем <i>разрешающий столбец</i> - столбец, в котором находится '
-    html.innerHTML += (simplex.mode == MAX ? 'минимальная' : 'максимальная') + ' дельта: '
+    html.innerHTML +=
+      (simplex.mode == MAX ? 'минимальная' : 'максимальная') + ' дельта: '
     html.innerHTML +=
       column +
       1 +
@@ -698,7 +711,8 @@ function SolveTable(n, m, func, restricts, mode, html) {
     let row = GetQandRow(simplex, column)
     if (row == -1) {
       html.innerHTML += PrintTable(simplex, -1, column)
-      html.innerHTML += 'Все значения столбца ' + (column + 1) + ' неположительны.<br>'
+      html.innerHTML +=
+        'Все значения столбца ' + (column + 1) + ' неположительны.<br>'
       html.innerHTML +=
         '<b>Функция не ограничена. Оптимальное решение отсутствует</b>.<br>'
       return {
@@ -732,20 +746,28 @@ function SolveTable(n, m, func, restricts, mode, html) {
       '<br>'
     iteration++
     html.innerHTML += CheckPlanSolve(simplex)
+    const button = document.createElement('button')
+    window['iteration'] = iteration
+    window['simplex'] = simplex
+    window['html'] = html
+    html.innerHTML += '<button onclick="window.step(simplex, html, iteration)">Continue</button>'
   }
-  if (HaveNegativeB(simplex)) {
-    html.innerHTML +=
-      'В столбце b присутствуют отрицательные значения. Решения не существует.'
-    return {
-      answer:
-        'В столбце b присутствуют отрицательные значения. Решения не существует.',
-      solve: html,
+  else {
+    if (HaveNegativeB(simplex)) {
+      html.innerHTML +=
+          'В столбце b присутствуют отрицательные значения. Решения не существует.'
+      return {
+        answer:
+            'В столбце b присутствуют отрицательные значения. Решения не существует.',
+        solve: html,
+      }
     }
+
+    let answer = PrintAnswer(simplex)
+    html.innerHTML += '<b>Ответ:</b> ' + answer
   }
-  html.innerHTML += '<b>Ответ:</b> '
-  let answer = PrintAnswer(simplex)
-  return { answer: answer }
 }
+
 function PrintAM(C, brackets = false) {
   if (C.a.isZero() && C.m.isZero()) return '0'
   if (brackets) {
@@ -1444,7 +1466,7 @@ function SolveArtificialBasis(n, m, func, restricts, mode, html) {
   let answer = PrintAnswerArtificialBasis(simplex)
   return { answer: answer, solve: html + answer + '<br>' }
 }
-export function Solve() {
+function Solve() {
   try {
     let solveBox = document.getElementById('simplex-solve')
     let n = InputStoreService.getMaxX()
@@ -1469,8 +1491,8 @@ export function Solve() {
     if (InputStoreService.getSolution()) {
       if (InputStoreService.getSolveType() == 1) {
         result = SolveTable(n, m, func, restricts, mode, solveBox)
-        solveBox.innerHTML +=
-          '<h3>Ответ</h3>' + CreateScrollBlock(result.answer)
+        // solveBox.innerHTML +=
+        //   '<h3>Ответ</h3>' + CreateScrollBlock(resultAnswer)
         // solveBox.innerHTML +=
         //   '<h3>Решение базовым симплекс-методом</h3> ' + result.solve
       } else {
@@ -1483,7 +1505,7 @@ export function Solve() {
     } else {
       const div = document.createElement('div')
       result = SolveTable(n, m, func, restricts, mode, div)
-      solveBox.innerHTML += '<h3>Ответ</h3>' + CreateScrollBlock(result.answer)
+      solveBox.innerHTML += '<h3>Ответ</h3>' + CreateScrollBlock(resultAnswer)
     }
     // updateScrollblocks()
     // scrollTo('#simplex-solve')
@@ -1496,3 +1518,10 @@ export function Solve() {
   }
   // updateHideOpenBlock()
 }
+
+export const init = () => {
+  window.Solve = Solve
+  window.step = step
+}
+// console.log('1.js')
+window.Solve = Solve

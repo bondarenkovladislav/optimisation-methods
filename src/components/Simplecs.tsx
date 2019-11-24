@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import InputStoreService from '../classes/services/InputStoreService'
 import { SimplecsCalculator } from '../classes/simplecs'
-import {Solve} from "../classes/test/1";
+// import {Solve} from "../classes/test/1";
 require('../css/style.css')
 
 export const Simplecs = (props: any) => {
@@ -13,7 +13,7 @@ export const Simplecs = (props: any) => {
     //   InputStoreService.getFuncArray()
     // )
     // setResult(simplics.calculate())
-    Solve()
+    // Solve()
   }, [])
 
   return (
