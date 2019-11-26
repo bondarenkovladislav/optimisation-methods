@@ -1,6 +1,7 @@
 import InputStoreService from '../services/InputStoreService'
 import { Fraction } from './FractionsHelper'
 import { bigInt } from './BigInt'
+const clonedeep = require('lodash.clonedeep')
 
 const LE = '≤'
 const EQ = '='
@@ -500,31 +501,24 @@ function CheckPlanSolve(simplex) {
 }
 function GetColumn(simplex) {
   let jmax = 0
-  if (InputStoreService.getAutoselect()) {
-    for (let j = 1; j < simplex.total; j++) {
-      if (simplex.mode == MAX && simplex.deltas[j].lt(simplex.deltas[jmax]))
-        jmax = j
-      else if (
-        simplex.mode == MIN &&
-        simplex.deltas[j].gt(simplex.deltas[jmax])
-      )
-        jmax = j
-    }
+  for (let j = 1; j < simplex.total; j++) {
+    if (simplex.mode == MAX && simplex.deltas[j].lt(simplex.deltas[jmax]))
+      jmax = j
+    else if (simplex.mode == MIN && simplex.deltas[j].gt(simplex.deltas[jmax]))
+      jmax = j
   }
   return jmax
 }
 function GetQandRow(simplex, j) {
   let imin = -1
-  if (InputStoreService.getAutoselect()) {
-    for (let i = 0; i < simplex.m; i++) {
-      simplex.Q[i] = null
-      if (simplex.table[i][j].isZero()) continue
-      let q = simplex.b[i].div(simplex.table[i][j])
-      if (q.isNeg() || (simplex.b[i].isZero() && simplex.table[i][j].isNeg()))
-        continue
-      simplex.Q[i] = q
-      if (imin == -1 || q.lt(simplex.Q[imin])) imin = i
-    }
+  for (let i = 0; i < simplex.m; i++) {
+    simplex.Q[i] = null
+    if (simplex.table[i][j].isZero()) continue
+    let q = simplex.b[i].div(simplex.table[i][j])
+    if (q.isNeg() || (simplex.b[i].isZero() && simplex.table[i][j].isNeg()))
+      continue
+    simplex.Q[i] = q
+    if (imin == -1 || q.lt(simplex.Q[imin])) imin = i
   }
   return imin
 }
@@ -681,17 +675,61 @@ function SolveTable(n, m, func, restricts, mode, html) {
   html.innerHTML += PrintTable(simplex)
   let iteration = 1
   html.innerHTML += CheckPlanSolve(simplex)
-  step(simplex, html, iteration)
+  // step(simplex, html, iteration)
+  window['iteration'] = iteration
+  window['simplex'] = simplex
+  window['html'] = html
+
+  if (!InputStoreService.getAutoselect()) {
+    const sInput = document.createElement('input')
+    sInput.setAttribute('type', 'text')
+    sInput.placeholder = 'column'
+    sInput.id = `column_${iteration}`
+    html.appendChild(sInput)
+
+    const fInput = document.createElement('input')
+    fInput.setAttribute('type', 'text')
+    fInput.placeholder = 'row'
+    fInput.id = `row_${iteration}`
+    html.appendChild(fInput)
+  }
+
+  html.innerHTML +=
+    '<button onclick="window.step(simplex, html, iteration)">Continue</button>'
+  let simplexStore = []
+  window['simplexStore'] = simplexStore
 }
 
-function onClick() {
-  console.log('hey')
+function onBack(html, iteration) {
+  if(iteration<=2){
+    return
+  }
+  iteration-=2
+  window.simplexStore.pop()
+  const current = window.simplexStore[window.simplexStore.length - 1]
+  window.simplex = current
+  window.step(
+    current,
+    html,
+    iteration
+  )
 }
 
 function step(simplex, html, iteration) {
+  console.log(!CheckPlan(simplex))
   if (!CheckPlan(simplex)) {
+    window.simplexStore.push(clonedeep(simplex))
+    console.log(window.simplexStore)
+    let column = GetColumn(simplex, iteration)
+    let row = GetQandRow(simplex, column, iteration)
+    if (!InputStoreService.getAutoselect()) {
+      column =
+        parseInt(document.getElementById(`column_${iteration}`).value, 10) - 1
+      row = parseInt(document.getElementById(`row_${iteration}`).value, 10) - 1
+      console.log(column, row)
+    }
+
     html.innerHTML += '<h3>Итерация ' + iteration + '</h3>'
-    let column = GetColumn(simplex)
     html.innerHTML +=
       'Определяем <i>разрешающий столбец</i> - столбец, в котором находится '
     html.innerHTML +=
@@ -708,7 +746,7 @@ function step(simplex, html, iteration) {
       'Находим симплекс-отношения Q, путём деления коэффициентов b на соответствующие значения столбца ' +
       (column + 1) +
       '<br>'
-    let row = GetQandRow(simplex, column)
+
     if (row == -1) {
       html.innerHTML += PrintTable(simplex, -1, column)
       html.innerHTML +=
@@ -750,15 +788,35 @@ function step(simplex, html, iteration) {
     window['iteration'] = iteration
     window['simplex'] = simplex
     window['html'] = html
-    html.innerHTML += '<button onclick="window.step(simplex, html, iteration)">Continue</button>'
-  }
-  else {
+
+    if (!InputStoreService.getAutoselect()) {
+      const sInput = document.createElement('input')
+      sInput.setAttribute('type', 'text')
+      sInput.placeholder = 'column'
+      sInput.id = `column_${iteration}`
+      html.appendChild(sInput)
+
+      const fInput = document.createElement('input')
+      fInput.setAttribute('type', 'text')
+      fInput.placeholder = 'row'
+      fInput.id = `row_${iteration}`
+      html.appendChild(fInput)
+    }
+
+    // html.innerHTML += '<input type="text"> i </input>'
+    // html.innerHTML += '<input type="text"> j </input>'
+    html.innerHTML +=
+      '<button onclick="window.step(simplex, html, iteration)">Continue</button>'
+
+    html.innerHTML +=
+      '<button onclick="window.onBack(html, iteration)">Back</button>'
+  } else {
     if (HaveNegativeB(simplex)) {
       html.innerHTML +=
-          'В столбце b присутствуют отрицательные значения. Решения не существует.'
+        'В столбце b присутствуют отрицательные значения. Решения не существует.'
       return {
         answer:
-            'В столбце b присутствуют отрицательные значения. Решения не существует.',
+          'В столбце b присутствуют отрицательные значения. Решения не существует.',
         solve: html,
       }
     }
@@ -1522,6 +1580,7 @@ function Solve() {
 export const init = () => {
   window.Solve = Solve
   window.step = step
+  window.onBack = onBack
 }
 // console.log('1.js')
 window.Solve = Solve

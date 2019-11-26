@@ -67,7 +67,6 @@ class InputStoreService {
 
     this.funcArray.forEach((el: any, i: number) => {
       if (el !== 'min' && el !== 'max') {
-        console.log(el)
         resultFuncArr.push(new Fraction(<string>el))
       } else {
         this.mode = el

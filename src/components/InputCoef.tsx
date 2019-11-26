@@ -220,7 +220,7 @@ export const InputCoef = () => {
           ))}
           Использовать дроби <Checkbox onChange={InputStoreService.toggleFraction} />
           С решением <Checkbox onChange={InputStoreService.toggleSolution} />
-          Ручноый выбор оптимального элеемнта <Checkbox onChange={InputStoreService.toggleAutoselect} />
+          Ручной выбор оптимального элемента <Checkbox onChange={InputStoreService.toggleAutoselect} />
 
           <Autocomplete
               id="combo-box-demo"
@@ -318,7 +318,7 @@ export const InputCoef = () => {
           </DialogContent>
         </Dialog>
       )}
-      {/*<div id={'simplex-solve'}></div>*/}
+      <div id={'simplex-solve'}></div>
     </Container>
   )
 }

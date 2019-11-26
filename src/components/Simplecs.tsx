@@ -19,7 +19,7 @@ export const Simplecs = (props: any) => {
   return (
     <div>
       <div id={'simplex-solve'}></div>
-      {/*<div className={'result'}></div>*/}
+      <div className={'result'}></div>
       {/*{result}*/}
     </div>
   )
