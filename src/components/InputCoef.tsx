@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react'
-import Checkbox from '@material-ui/core/Checkbox';
+import Checkbox from '@material-ui/core/Checkbox'
 import {
   Container,
   TextField,
   Grid,
   DialogTitle,
   DialogContent,
+  Tooltip,
+  Snackbar,
+  IconButton,
 } from '@material-ui/core'
 import Autocomplete from '@material-ui/lab/Autocomplete'
 import Button from '@material-ui/core/Button'
@@ -13,22 +16,24 @@ import { Dialog } from '@material-ui/core'
 //@ts-ignore
 import { useHistory } from 'react-router-dom'
 import InputStoreService from '../classes/services/InputStoreService'
-import {Simplecs} from "./Simplecs";
-import {init} from "../classes/test/1";
+import { Simplecs } from './Simplecs'
+import { init } from '../classes/test/1'
 
 declare global {
-  interface Window { Solve: any; }
+  interface Window {
+    Solve: any
+  }
 }
-
 
 const comboItems = [
   {
-    title:'Симплекс-метод',
-    value: 1
-  },{
-    title:'Метод искусственного базиса',
-    value: 2
-  }
+    title: 'Симплекс-метод',
+    value: 1,
+  },
+  {
+    title: 'Метод искусственного базиса',
+    value: 2,
+  },
 ]
 
 export const InputCoef = () => {
@@ -41,6 +46,7 @@ export const InputCoef = () => {
   const [openDialog, setOpenDialog] = useState<boolean>(true)
   let history = useHistory()
   const [shouldInit, setShouldInit] = useState<boolean>(false)
+  const [openSnack, setOpenSnack] = useState<boolean>(false)
 
   useEffect(() => {
     if (variablesCount && rowsCount) {
@@ -150,7 +156,17 @@ export const InputCoef = () => {
                 <TextField
                   label={el}
                   value={funcArray[i]}
-                  onChange={e => onFuncValueChange(i, e.target.value)}
+                  onChange={e => {
+                    if(e.target.value !== '' && !e.target.value.includes('-')) {
+                      const value = parseInt(e.target.value, 10)
+                      if (value !== value) {
+                        setOpenSnack(true)
+                        onFuncValueChange(i, funcArray[i])
+                        return
+                      }
+                    }
+                    onFuncValueChange(i, e.target.value)
+                  }}
                 />
                 <span>+</span>
               </div>
@@ -166,7 +182,7 @@ export const InputCoef = () => {
             <Autocomplete
               value={funcArray[coefLabels.length + 1]}
               options={['max', 'min']}
-              renderInput={params => <TextField {...params} label={'type'} />}
+              renderInput={params => <TextField {...params} label={'Тип'} />}
               onChange={(e, v) => onFuncValueChange(coefLabels.length + 1, v)}
             />
           </Grid>
@@ -208,7 +224,7 @@ export const InputCoef = () => {
                         onChange={(e, v) => onChangeValue(i, j + 1, v)}
                       />
                       <TextField
-                        label={'free term'}
+                        label={'свободный коэф.'}
                         value={valueArray[i][coefLabels.length + 1]}
                         onChange={e => onChangeValue(i, j + 2, e.target.value)}
                       />
@@ -218,23 +234,47 @@ export const InputCoef = () => {
               ))}
             </Grid>
           ))}
-          Использовать дроби <Checkbox onChange={InputStoreService.toggleFraction} />
-          С решением <Checkbox onChange={InputStoreService.toggleSolution} />
-          Ручной выбор оптимального элемента <Checkbox onChange={InputStoreService.toggleAutoselect} />
-
+          <Tooltip title="Вывод программы будут состалять дроби">
+            <span>
+              Использовать дроби
+              <Checkbox onChange={InputStoreService.toggleFraction} />
+            </span>
+          </Tooltip>
+          <Tooltip title="Будет показан полный пошаговый ход решения">
+            <span>
+              С решением{' '}
+              <Checkbox onChange={InputStoreService.toggleSolution} />
+            </span>
+          </Tooltip>
+          <Tooltip
+            title={
+              'Запретить системе автомотический выбор оптимального элемента'
+            }
+          >
+            <span>
+              Ручной выбор оптимального элемента
+              <Checkbox onChange={InputStoreService.toggleAutoselect} />
+            </span>
+          </Tooltip>
           <Autocomplete
-              id="combo-box-demo"
-              autoComplete={false}
-              disableClearable={true}
-              options={comboItems}
-              getOptionLabel={(option) => option.title}
-              style={{ width: 300 }}
-              renderInput={params => (
-                  <TextField {...params} label="Метод решения" variant="outlined" fullWidth />
-              )}
-              onChange={(e, value) => InputStoreService.setSolveType(value.value)}
+            id="combo-box-demo"
+            autoComplete={false}
+            disableClearable={true}
+            options={comboItems}
+            getOptionLabel={option => option.title}
+            style={{ width: 300 }}
+            renderInput={params => (
+              <Tooltip title="Симплекс метод по умолчанию">
+                <TextField
+                  {...params}
+                  label="Метод решения"
+                  variant="outlined"
+                  fullWidth
+                />
+              </Tooltip>
+            )}
+            onChange={(e, value) => InputStoreService.setSolveType(value.value)}
           />
-
           <Button
             variant="contained"
             color="primary"
@@ -283,41 +323,102 @@ export const InputCoef = () => {
             Введите размерность
           </DialogTitle>
           <DialogContent>
-            <TextField
-              label={'Task Dimension'}
-              onChange={e => {
-                setRowsCount(parseInt(e.target.value, 10))
-                setShouldInit(true)
-              }}
-            />
-            <TextField
-              label={'Coef Matrix Dimension'}
-              onChange={e => {
-                setVariablesCount(parseInt(e.target.value, 10))
-                setShouldInit(true)
-              }}
-            />
-            <input
-              type="file"
-              name="file"
-              onChange={e => {
-                const files = e.target.files
-                if (files && files.length) {
-                  const reader = new FileReader()
-                  reader.onload = () => {
-                    const res = JSON.parse(reader.result as string)
-                    updateStates(res)
+            <Tooltip title="Введите размерность задачи">
+              <TextField
+                label={'Размерность задачи'}
+                onChange={e => {
+                  try {
+                    const value = parseInt(e.target.value, 10)
+                    if (!value) {
+                      throw new Error('nan')
+                    }
+
+                    if (value > 16) {
+                      return
+                    }
+                    setRowsCount(value)
+                    setShouldInit(true)
+                    if (
+                      e.target.value !== '' &&
+                      variablesCount &&
+                      variablesCount > 0
+                    ) {
+                      setOpenDialog(false)
+                    }
+                  } catch (e) {
+                    setOpenSnack(true)
                   }
-                  reader.onerror = function() {
-                    console.log(reader.error)
+                }}
+              />
+            </Tooltip>
+            <Tooltip title="Введите размерность матрицы коэффициентов">
+              <TextField
+                label={'Матрица коэфф'}
+                onChange={e => {
+                  try {
+                    const value = parseInt(e.target.value, 10)
+                    if (!value) {
+                      throw new Error('nan')
+                    }
+                    setVariablesCount(value)
+                    setShouldInit(true)
+                    if (e.target.value !== '' && rowsCount) {
+                      setOpenDialog(false)
+                    }
+                  } catch (e) {
+                    setOpenSnack(true)
                   }
-                  reader.readAsText(files[0])
-                }
-              }}
-            />
+                }}
+              />
+            </Tooltip>
+            <Tooltip title="Чтение данных из файла">
+              <input
+                type="file"
+                name="file"
+                onChange={e => {
+                  const files = e.target.files
+                  if (files && files.length) {
+                    const reader = new FileReader()
+                    reader.onload = () => {
+                      const res = JSON.parse(reader.result as string)
+                      updateStates(res)
+                    }
+                    reader.onerror = function() {
+                      console.log(reader.error)
+                    }
+                    reader.readAsText(files[0])
+                  }
+                }}
+              />
+            </Tooltip>
           </DialogContent>
         </Dialog>
       )}
+      <Snackbar
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left',
+        }}
+        open={openSnack}
+        autoHideDuration={6000}
+        onClose={() => setOpenSnack(false)}
+        ContentProps={{
+          'aria-describedby': 'message-id',
+        }}
+        message={
+          <span id="message-id">Введите правильное числовое значение</span>
+        }
+        action={[
+          <Button
+            key="undo"
+            color="secondary"
+            size="small"
+            onClick={() => setOpenSnack(false)}
+          >
+            X
+          </Button>,
+        ]}
+      />
       <div id={'simplex-solve'}></div>
     </Container>
   )
