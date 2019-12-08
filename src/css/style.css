@@ -106,3 +106,15 @@ table .selected .selected{
 .ogranichenie{
 	display:none;
 }
+
+.row-col-cell {
+	background-color: rgba(31, 39, 255, 0.53);
+}
+
+.row-cell {
+	background-color: rgba(27, 36, 255, 0.38);
+}
+
+.col-cell {
+	background-color: rgba(27, 36, 255, 0.38);
+}
