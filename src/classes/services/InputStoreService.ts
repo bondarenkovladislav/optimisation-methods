@@ -12,6 +12,7 @@ class InputStoreService {
   private withSolveBox: boolean = false
   private solveType: number = 1
   private autoSelectOptim: boolean = true
+  public xo: string[] = []
 
   public setValueArray = (array: any[]) => {
     this.valueArray = array

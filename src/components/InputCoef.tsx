@@ -49,6 +49,7 @@ export const InputCoef = () => {
   let history = useHistory()
   const [shouldInit, setShouldInit] = useState<boolean>(false)
   const [openSnack, setOpenSnack] = useState<boolean>(false)
+  const [showXo, setShowXo] = useState<boolean>(true)
 
   useEffect(() => {
     if (variablesCount && rowsCount) {
@@ -282,11 +283,27 @@ export const InputCoef = () => {
                     />
                   </Tooltip>
                 )}
-                onChange={(e, value) =>
+                onChange={(e, value) => {
                   InputStoreService.setSolveType(value.value)
-                }
+                  console.log(value.value)
+                  if (value.value === 2) {
+                    setShowXo(false)
+                  } else if (value.value === 1) {
+                    setShowXo(true)
+                  }
+                }}
               />
             </div>
+            {showXo && (
+              <Tooltip title="Введите числа через запятую">
+                <TextField
+                  label={'X0 = '}
+                  onChange={e => {
+                    InputStoreService.xo = e.target.value.split(',')
+                  }}
+                />
+              </Tooltip>
+            )}
             <Button
               variant="contained"
               color="primary"

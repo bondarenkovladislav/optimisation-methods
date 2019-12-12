@@ -70,7 +70,8 @@ function ChangeSigns(restricts) {
 }
 function PrepareTable(n, m, func, restricts, mode) {
   let k = 0
-  for (let i = 0; i < restricts.length; i++) if (restricts[i].sign != EQ) k++
+  // for (let i = 0; i < restricts.length; i++) if (restricts[i].sign != EQ) k++
+  // console.log(k)
   let simplex = {
     n: n,
     m: m,
@@ -84,30 +85,34 @@ function PrepareTable(n, m, func, restricts, mode) {
     Q: [],
   }
   let html = ''
-  if (k > 2) {
-    html +=
-      'Для каждого ограничения с неравенством <b>добавляем дополнительные переменные</b> x<sub>' +
-      (n + 1) +
-      '</sub>..x<sub>' +
-      (n + k) +
-      '</sub>.<br>'
-  } else if (k == 2) {
-    html +=
-      'Для каждого ограничения с неравенством <b>добавляем дополнительные переменные</b> x<sub>' +
-      (n + 1) +
-      '</sub> и x<sub>' +
-      (n + k) +
-      '</sub>.<br>'
-  } else if (k == 1) {
-    html +=
-      'Для ограничения с неравенством <b>добавляем дополнительную переменную</b> x<sub>' +
-      (n + 1) +
-      '</sub>.<br>'
-  }
+  // if (!InputStoreService.xo.length) {
+  //   if (k > 2) {
+  //     html +=
+  //       'Для каждого ограничения с неравенством <b>добавляем дополнительные переменные</b> x<sub>' +
+  //       (n + 1) +
+  //       '</sub>..x<sub>' +
+  //       (n + k) +
+  //       '</sub>.<br>'
+  //   } else if (k == 2) {
+  //     html +=
+  //       'Для каждого ограничения с неравенством <b>добавляем дополнительные переменные</b> x<sub>' +
+  //       (n + 1) +
+  //       '</sub> и x<sub>' +
+  //       (n + k) +
+  //       '</sub>.<br>'
+  //   } else if (k == 1) {
+  //     html +=
+  //       'Для ограничения с неравенством <b>добавляем дополнительную переменную</b> x<sub>' +
+  //       (n + 1) +
+  //       '</sub>.<br>'
+  //   }
+  // }
   for (let i = 0; i < n; i++) simplex.C.push(func[i])
   for (let i = 0; i < k; i++) simplex.C.push(new Fraction())
   simplex.C.push(new Fraction('0'))
-  let findHtml = '<b>Ищем начальное базисное решение:</b><br>'
+  // let findHtml = !InputStoreService.xo.length
+  //   ? '<b>Ищем начальное базисное решение:</b><br>'
+  //   : ''
   let index = 0
   let unknown = -1
   let basisHtml = []
@@ -116,51 +121,55 @@ function PrepareTable(n, m, func, restricts, mode) {
     simplex.table[i] = []
     for (let j = 0; j < n; j++) simplex.table[i].push(restricts[i].values[j])
     let inserted = false
-    if (restricts[i].sign == EQ) {
-      simplex.basis.push(unknown)
-      unknown--
-      basisHtml[simplex.basis.length - 1] =
-        'Ограничение ' +
-        (i + 1) +
-        ' содержит равенство. Базисная переменная для этого ограничения будет определена позднее.<br>'
-    } else if (NEGATIVE_BASIS && restricts[i].sign == GE) {
-      simplex.basis.push(unknown)
-      unknown--
-      basisHtml[simplex.basis.length - 1] =
-        'Ограничение ' +
-        (i + 1) +
-        ' содержит неравенство с ' +
-        GE +
-        '. Базисная переменная для этого ограничения будет определена позднее.<br>'
-    }
-    for (let j = 0; j < k; j++) {
-      if (restricts[i].sign == EQ) {
-        simplex.table[i].push(new Fraction('0'))
-      } else if (!NEGATIVE_BASIS || restricts[i].sign == LE) {
-        if (j != index || inserted) {
-          simplex.table[i].push(new Fraction('0'))
-        } else if (!inserted) {
-          simplex.table[i].push(new Fraction('1'))
-          simplex.basis.push(n + index)
-          basisHtml[simplex.basis.length - 1] =
-            'Ограничение ' +
-            (i + 1) +
-            ' содержит неравенство, базисной будет добавленная дополнительная переменная x<sub>' +
-            (n + index + 1) +
-            '</sub><br>'
-          index++
-          inserted = true
-        }
-      } else if (NEGATIVE_BASIS) {
-        if (j != index || inserted) {
-          simplex.table[i].push(new Fraction('0'))
-        } else if (!inserted) {
-          simplex.table[i].push(new Fraction('-1'))
-          index++
-          inserted = true
-        }
-      }
-    }
+    simplex.basis.push(unknown)
+    unknown--
+    // if (!InputStoreService.xo.length) {
+    //   if (restricts[i].sign == EQ) {
+    //     simplex.basis.push(unknown)
+    //     unknown--
+    //     basisHtml[simplex.basis.length - 1] =
+    //       'Ограничение ' +
+    //       (i + 1) +
+    //       ' содержит равенство. Базисная переменная для этого ограничения будет определена позднее.<br>'
+    //   } else if (NEGATIVE_BASIS && restricts[i].sign == GE) {
+    //     simplex.basis.push(unknown)
+    //     unknown--
+    //     basisHtml[simplex.basis.length - 1] =
+    //       'Ограничение ' +
+    //       (i + 1) +
+    //       ' содержит неравенство с ' +
+    //       GE +
+    //       '. Базисная переменная для этого ограничения будет определена позднее.<br>'
+    //   }
+    // }
+    // for (let j = 0; j < k; j++) {
+    //   if (restricts[i].sign == EQ) {
+    //     simplex.table[i].push(new Fraction('0'))
+    //   } else if (!NEGATIVE_BASIS || restricts[i].sign == LE) {
+    //     if (j != index || inserted) {
+    //       simplex.table[i].push(new Fraction('0'))
+    //     } else if (!inserted) {
+    //       simplex.table[i].push(new Fraction('1'))
+    //       // simplex.basis.push(n + index)
+    //       // basisHtml[simplex.basis.length - 1] =
+    //       //   'Ограничение ' +
+    //       //   (i + 1) +
+    //       //   ' содержит неравенство, базисной будет добавленная дополнительная переменная x<sub>' +
+    //       //   (n + index + 1) +
+    //       //   '</sub><br>'
+    //       index++
+    //       inserted = true
+    //     }
+    //   } else if (NEGATIVE_BASIS) {
+    //     if (j != index || inserted) {
+    //       simplex.table[i].push(new Fraction('0'))
+    //     } else if (!inserted) {
+    //       simplex.table[i].push(new Fraction('-1'))
+    //       index++
+    //       inserted = true
+    //     }
+    //   }
+    // }
     simplex.b[i] = restricts[i].b
     systemHtml +=
       PrintFunction(simplex.table[i]) +
@@ -170,7 +179,7 @@ function PrepareTable(n, m, func, restricts, mode) {
   }
   unknown = -1
   for (let i = 0; i < m; i++) {
-    if (simplex.basis[i] > -1) continue
+    // if (simplex.basis[i] > -1) continue
     let column = GetIdentityColumn(simplex, i)
     if (column == -1) {
       simplex.basis[i] = unknown--
@@ -188,7 +197,14 @@ function PrepareTable(n, m, func, restricts, mode) {
     html += 'Перепишем ограничения в каноническом виде:<br>'
     html += systemHtml + '<br>'
   }
-  html += findHtml + basisHtml.join('') + '<br>'
+  if (!InputStoreService.xo.length) {
+    html += basisHtml.join('') + '<br>'
+  }
+  // else {
+  //   for (let i = 0; i < m; i++) {
+  //     simplex.basis[i] = new Fraction(InputStoreService.xo[i])
+  //   }
+  // }
   return { simplex: simplex, html: html }
 }
 function CheckBasis(simplex) {
@@ -273,6 +289,12 @@ function RemoveZeroRow(simplex, row) {
   simplex.m--
 }
 function FindBasis(simplex) {
+  if (InputStoreService.xo.length) {
+    const arr = []
+    InputStoreService.xo.forEach(el => arr.push(parseInt(el)))
+    simplex.basis = arr
+    return ''
+  }
   let html = '<b>Ищем базис</b><br>'
   for (let i = 0; i < simplex.basis.length; i++) {
     if (simplex.basis[i] > -1) continue
@@ -578,7 +600,10 @@ function PrintTable(simplex, row = -1, col = -1) {
     if (simplex.basis[i] < 0)
       html += '<tr><td><b>?<sub>' + -simplex.basis[i] + '</sub></b></td>'
     else
-      html += '<tr><td><b>x<sub>' + (1 + simplex.basis[i]) + '</sub></b></td>'
+      html +=
+        '<tr><td><b>x<sub>' +
+        (1 + parseInt(simplex.basis[i], 10)) +
+        '</sub></b></td>'
     for (let j = 0; j < simplex.table[i].length; j++) {
       if (i == row && j == col) html += "<td class='row-col-cell'>"
       else if (i == row) html += "<td class='row-cell'>"
@@ -655,9 +680,10 @@ function SolveTable(n, m, func, restricts, mode, html) {
   html.innerHTML += '<b>Начальная симплекс-таблица</b>'
   html.innerHTML += PrintTable(simplex)
   let res = true
-  if (!CheckBasis(simplex)) html.innerHTML += FindBasis(simplex)
+  if (!CheckBasis(simplex)) html.innerHTML += FindBasis(simplex, html)
   if (!CheckBasis(simplex)) {
     window['answer'] = 'Решение задачи не существует.'
+    html.innerHTML = 'Решение задачи не существует'
     return
   }
   while (HaveNegativeB(simplex) && res) {
@@ -712,8 +738,15 @@ function SolveTable(n, m, func, restricts, mode, html) {
 }
 function onBack(html, iteration) {
   if (iteration <= 2) {
-    if(iteration === 2){
-      SolveTable(window.n, window.m, window.func, window.restricts, window.mode, window.html)
+    if (iteration === 2) {
+      SolveTable(
+        window.n,
+        window.m,
+        window.func,
+        window.restricts,
+        window.mode,
+        window.html
+      )
     }
     return
   }
@@ -725,8 +758,15 @@ function onBack(html, iteration) {
 }
 function onArtificialBack(html, iteration) {
   if (iteration <= 2) {
-    if(iteration === 2) {
-      SolveArtificialBasis(window.n, window.m, window.func, window.restricts, window.mode, window.html)
+    if (iteration === 2) {
+      SolveArtificialBasis(
+        window.n,
+        window.m,
+        window.func,
+        window.restricts,
+        window.mode,
+        window.html
+      )
     }
     return
   }
@@ -1376,6 +1416,7 @@ function GetColumnArtificialBasis(simplex) {
   return jmax
 }
 function MakeVarBasisArtificial(simplex, row, column, print = false) {
+  console.log(3)
   let html = ''
   if (simplex.basis[row] >= simplex.total - simplex.avars.length)
     html +=
@@ -1510,7 +1551,7 @@ function stepArtificial(simplex, html, iteration) {
     let row = GetQandRowArtificialBasis(simplex, column, iteration)
     if (!InputStoreService.getAutoselect()) {
       column =
-          parseInt(document.getElementById(`column_${iteration}`).value, 10) - 1
+        parseInt(document.getElementById(`column_${iteration}`).value, 10) - 1
       row = parseInt(document.getElementById(`row_${iteration}`).value, 10) - 1
     }
     html.innerHTML += '<h3>Итерация ' + iteration + '</h3>'

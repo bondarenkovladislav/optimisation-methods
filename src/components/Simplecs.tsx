@@ -9,8 +9,8 @@ export const Simplecs = (props: any) => {
 
   useEffect(() => {
     // const simplics = new SimplecsCalculator(
-    //   InputStoreService.getValueArray(),
-    //   InputStoreService.getFuncArray()
+      // InputStoreService.getValueArray(),/**/
+      // InputStoreService.getFuncArray()
     // )
     // setResult(simplics.calculate())
     // Solve()
@@ -18,9 +18,9 @@ export const Simplecs = (props: any) => {
 
   return (
     <div>
-      <div id={'simplex-solve'}></div>
+      {/*<div id={'simplex-solve'}></div>*/}
       <div className={'result'}></div>
-      {/*{result}*/}
+      {result}
     </div>
   )
 }
