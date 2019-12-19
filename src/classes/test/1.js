@@ -70,8 +70,10 @@ function ChangeSigns(restricts) {
 }
 function PrepareTable(n, m, func, restricts, mode) {
   let k = 0
+  if (InputStoreService.getSolveType() === 2) {
+    k = m
+  }
   // for (let i = 0; i < restricts.length; i++) if (restricts[i].sign != EQ) k++
-  // console.log(k)
   let simplex = {
     n: n,
     m: m,
@@ -86,44 +88,51 @@ function PrepareTable(n, m, func, restricts, mode) {
   }
   let html = ''
   // if (!InputStoreService.xo.length) {
-  //   if (k > 2) {
-  //     html +=
-  //       'Для каждого ограничения с неравенством <b>добавляем дополнительные переменные</b> x<sub>' +
-  //       (n + 1) +
-  //       '</sub>..x<sub>' +
-  //       (n + k) +
-  //       '</sub>.<br>'
-  //   } else if (k == 2) {
-  //     html +=
-  //       'Для каждого ограничения с неравенством <b>добавляем дополнительные переменные</b> x<sub>' +
-  //       (n + 1) +
-  //       '</sub> и x<sub>' +
-  //       (n + k) +
-  //       '</sub>.<br>'
-  //   } else if (k == 1) {
-  //     html +=
-  //       'Для ограничения с неравенством <b>добавляем дополнительную переменную</b> x<sub>' +
-  //       (n + 1) +
-  //       '</sub>.<br>'
-  //   }
+  if (k > 2) {
+    html +=
+      'Для каждого ограничения <b>добавляем дополнительные переменные</b> x<sub>' +
+      (n + 1) +
+      '</sub>..x<sub>' +
+      (n + k) +
+      '</sub>.<br>'
+  } else if (k == 2) {
+    html +=
+      'Для каждого ограничения <b>добавляем дополнительные переменные</b> x<sub>' +
+      (n + 1) +
+      '</sub> и x<sub>' +
+      (n + k) +
+      '</sub>.<br>'
+  } else if (k == 1) {
+    html +=
+      'Для ограничения <b>добавляем дополнительную переменную</b> x<sub>' +
+      (n + 1) +
+      '</sub>.<br>'
+  }
   // }
+
   for (let i = 0; i < n; i++) simplex.C.push(func[i])
   for (let i = 0; i < k; i++) simplex.C.push(new Fraction())
   simplex.C.push(new Fraction('0'))
-  // let findHtml = !InputStoreService.xo.length
-  //   ? '<b>Ищем начальное базисное решение:</b><br>'
-  //   : ''
+  let findHtml = ''
+  if (InputStoreService.getSolveType() === 2) {
+    findHtml = !InputStoreService.xo.length
+      ? '<b>Ищем начальное базисное решение:</b><br>'
+      : ''
+  }
+
   let index = 0
   let unknown = -1
   let basisHtml = []
   let systemHtml = ''
+  let pasteIndex = 0
   for (let i = 0; i < m; i++) {
     simplex.table[i] = []
     for (let j = 0; j < n; j++) simplex.table[i].push(restricts[i].values[j])
     let inserted = false
-    simplex.basis.push(unknown)
-    unknown--
-    // if (!InputStoreService.xo.length) {
+
+    // simplex.basis.push(unknown)
+    // unknown--
+    // if (!InputStoreService.getSolveType() === 2) {
     //   if (restricts[i].sign == EQ) {
     //     simplex.basis.push(unknown)
     //     unknown--
@@ -142,34 +151,40 @@ function PrepareTable(n, m, func, restricts, mode) {
     //       '. Базисная переменная для этого ограничения будет определена позднее.<br>'
     //   }
     // }
-    // for (let j = 0; j < k; j++) {
-    //   if (restricts[i].sign == EQ) {
-    //     simplex.table[i].push(new Fraction('0'))
-    //   } else if (!NEGATIVE_BASIS || restricts[i].sign == LE) {
-    //     if (j != index || inserted) {
-    //       simplex.table[i].push(new Fraction('0'))
-    //     } else if (!inserted) {
-    //       simplex.table[i].push(new Fraction('1'))
-    //       // simplex.basis.push(n + index)
-    //       // basisHtml[simplex.basis.length - 1] =
-    //       //   'Ограничение ' +
-    //       //   (i + 1) +
-    //       //   ' содержит неравенство, базисной будет добавленная дополнительная переменная x<sub>' +
-    //       //   (n + index + 1) +
-    //       //   '</sub><br>'
-    //       index++
-    //       inserted = true
-    //     }
-    //   } else if (NEGATIVE_BASIS) {
-    //     if (j != index || inserted) {
-    //       simplex.table[i].push(new Fraction('0'))
-    //     } else if (!inserted) {
-    //       simplex.table[i].push(new Fraction('-1'))
-    //       index++
-    //       inserted = true
-    //     }
-    //   }
-    // }
+    if (InputStoreService.getSolveType() === 2) {
+      for (let j = 0; j < k; j++) {
+        // if (restricts[i].sign == EQ) {
+
+        // } else if (!NEGATIVE_BASIS || restricts[i].sign == LE) {
+        //   if (j != index || inserted) {
+        //     simplex.table[sii].push(new Fraction('0'))
+        //   } else
+        if (!inserted && j === pasteIndex) {
+          simplex.table[i].push(new Fraction('1'))
+          simplex.basis.push(n + index)
+          basisHtml[simplex.basis.length - 1] =
+            'Ограничение ' +
+            (i + 1) +
+            ' содержит неравенство, базисной будет добавленная дополнительная переменная x<sub>' +
+            (n + index + 1) +
+            '</sub><br>'
+          index++
+          inserted = true
+          pasteIndex ++
+        }else {
+          simplex.table[i].push(new Fraction('0'))
+        }
+        // } else if (NEGATIVE_BASIS) {
+        //   if (j != index || inserted) {
+        //     simplex.table[i].push(new Fraction('0'))
+        //   } else if (!inserted) {
+        //     simplex.table[i].push(new Fraction('-1'))
+        //     index++
+        //     inserted = true
+        //   }
+        // }
+      }
+    }
     simplex.b[i] = restricts[i].b
     systemHtml +=
       PrintFunction(simplex.table[i]) +
@@ -177,10 +192,15 @@ function PrepareTable(n, m, func, restricts, mode) {
       simplex.b[i].print(printMode) +
       '<br>'
   }
+
   unknown = -1
   for (let i = 0; i < m; i++) {
-    // if (simplex.basis[i] > -1) continue
+    // console.log(simplex.basis)
+    if (simplex.basis[i] > -1) continue
+    console.log(2.1)
+    console.log(simplex)
     let column = GetIdentityColumn(simplex, i)
+    console.log(2.2)
     if (column == -1) {
       simplex.basis[i] = unknown--
     } else {
@@ -198,7 +218,7 @@ function PrepareTable(n, m, func, restricts, mode) {
     html += systemHtml + '<br>'
   }
   if (!InputStoreService.xo.length) {
-    html += basisHtml.join('') + '<br>'
+    html += findHtml + basisHtml.join('') + '<br>'
   }
   // else {
   //   for (let i = 0; i < m; i++) {
@@ -1683,7 +1703,8 @@ function Solve() {
       if (InputStoreService.getSolveType() == 1) {
         SolveTable(n, m, func, restricts, mode, solveBox)
       } else {
-        SolveArtificialBasis(n, m, func, restricts, mode, solveBox)
+        SolveTable(n, m, func, restricts, mode, solveBox)
+        // SolveArtificialBasis(n, m, func, restricts, mode, solveBox)
       }
     } else {
       const div = document.createElement('div')
