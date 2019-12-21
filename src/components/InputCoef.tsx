@@ -93,7 +93,7 @@ export const InputCoef = () => {
     if (shouldInit) {
       const arr: string[] = []
       coefLabels.forEach((coef, i) => arr.push(`${i}`))
-      arr.push(`${10}`)
+      // arr.push(`${10}`)
       arr.push('min')
       setFuncArray(arr)
     }
@@ -178,13 +178,13 @@ export const InputCoef = () => {
                   <span>+</span>
                 </div>
               ))}
-              <TextField
-                label={'free term'}
-                value={funcArray[coefLabels.length]}
-                onChange={e =>
-                  onFuncValueChange(coefLabels.length, e.target.value)
-                }
-              />
+              {/*<TextField*/}
+              {/*  label={'free term'}*/}
+              {/*  value={funcArray[coefLabels.length]}*/}
+              {/*  onChange={e =>*/}
+              {/*    onFuncValueChange(coefLabels.length, e.target.value)*/}
+              {/*  }*/}
+              {/*/>*/}
               <span>-></span>
               <Autocomplete
                 value={funcArray[coefLabels.length + 1]}

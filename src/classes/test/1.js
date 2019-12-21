@@ -1,19 +1,12 @@
 import InputStoreService from '../services/InputStoreService'
 import { Fraction } from './FractionsHelper'
 import { bigInt } from './BigInt'
+import { Iteration } from '../Gauss'
 const clonedeep = require('lodash.clonedeep')
 
-const LE = '≤'
-const EQ = '='
-const GE = '≥'
 const MAX = 'max'
 const MIN = 'min'
-const NEGATIVE_BASIS = false
-let NEED_LOGS = true
-const GENERATE_SAMPLES = false
-let solveBox = document.getElementById('simplex-solve')
 let printMode = 1
-let resultAnswer = null
 function CreateHideOpenBlock(text, content) {
   let html = "<div class='hide-open-block'>"
   html +=
@@ -48,27 +41,8 @@ function PrintFunction(func) {
   if (!start) html += '0'
   return html
 }
-function ChangeSigns(restricts) {
-  let html =
-    '<b>Меняем знаки у ограничений с ' + GE + ', путём умножения на -1:</b><br>'
-  let have = false
-  for (let i = 0; i < restricts.length; i++) {
-    if (restricts[i].sign == GE) {
-      restricts[i].sign = LE
-      for (let j = 0; j < restricts[i].values.length; j++)
-        restricts[i].values[j].changeSign()
-      restricts[i].b.changeSign()
-      have = true
-    }
-    html += PrintFunction(restricts[i].values)
-    html += ' ' + restricts[i].sign + ' '
-    html += restricts[i].b.print(printMode)
-    html += '<br>'
-  }
-  html += '<br>'
-  return have ? html : ''
-}
 function PrepareTable(n, m, func, restricts, mode) {
+  const res = []
   let k = 0
   if (InputStoreService.getSolveType() === 2) {
     k = m
@@ -85,6 +59,8 @@ function PrepareTable(n, m, func, restricts, mode) {
     C: [],
     deltas: [],
     Q: [],
+    row: [],
+    fn: [],
   }
   let html = ''
   // if (!InputStoreService.xo.length) {
@@ -121,7 +97,6 @@ function PrepareTable(n, m, func, restricts, mode) {
   }
 
   let index = 0
-  let unknown = -1
   let basisHtml = []
   let systemHtml = ''
   let pasteIndex = 0
@@ -170,8 +145,8 @@ function PrepareTable(n, m, func, restricts, mode) {
             '</sub><br>'
           index++
           inserted = true
-          pasteIndex ++
-        }else {
+          pasteIndex++
+        } else {
           simplex.table[i].push(new Fraction('0'))
         }
         // } else if (NEGATIVE_BASIS) {
@@ -192,15 +167,10 @@ function PrepareTable(n, m, func, restricts, mode) {
       simplex.b[i].print(printMode) +
       '<br>'
   }
-
-  unknown = -1
+  let unknown = -1
   for (let i = 0; i < m; i++) {
-    // console.log(simplex.basis)
     if (simplex.basis[i] > -1) continue
-    console.log(2.1)
-    console.log(simplex)
     let column = GetIdentityColumn(simplex, i)
-    console.log(2.2)
     if (column == -1) {
       simplex.basis[i] = unknown--
     } else {
@@ -220,11 +190,100 @@ function PrepareTable(n, m, func, restricts, mode) {
   if (!InputStoreService.xo.length) {
     html += findHtml + basisHtml.join('') + '<br>'
   }
-  // else {
-  //   for (let i = 0; i < m; i++) {
-  //     simplex.basis[i] = new Fraction(InputStoreService.xo[i])
-  //   }
-  // }
+  for (let i = 0; i < restricts[0].values.length; i++) {
+    if (i < simplex.basis.length) {
+      simplex.basis[i] = i
+    } else {
+      simplex.row.push(i)
+    }
+    // if (simplex.basis[i] > -1) continue
+    // let column = i
+    // simplex.basis[i] = column
+    // if (column > -1) {
+    //   html +=
+    //     'В качестве базисной переменной ?<sub>' +
+    //     -simplex.basis[i] +
+    //     '</sub> берём x<sub>' +
+    //     (column + 1) +
+    //     '</sub>'
+    //   html +=
+    //     '. Делим строку ' +
+    //     (i + 1) +
+    //     ' на ' +
+    //     simplex.table[i][column].print(printMode) +
+    //     '.<br>'
+    //   DivRow(simplex, i, simplex.table[i][column])
+    //   simplex.basis[i] = column
+    // } else {
+    //   column = 0
+    //   while (column < simplex.total) {
+    //     if (IsBasisVar(simplex, column) || simplex.table[i][column].isZero()) {
+    //       column++
+    //     } else {
+    //       break
+    //     }
+    //   }
+    //   if (column == simplex.total) {
+    //     if (IsRowZero(simplex, i)) {
+    //       html +=
+    //         'Условие ' +
+    //         (i + 1) +
+    //         ' линейно зависимо с другими условиями. Исключаем его из дальнейшего расмотрения.<br>'
+    //       RemoveZeroRow(simplex, i)
+    //       html += 'Обновлённая симплекс-таблица:'
+    //       html += PrintTable(simplex)
+    //       i--
+    //       continue
+    //     } else {
+    //       html += '<br><b>Таблица:</b>'
+    //       html += PrintTable(simplex)
+    //       return (
+    //         html +
+    //         '<br>Обнаружено противоречивое условие. <b>Решение не существует</b>'
+    //       )
+    //     }
+    //   }
+    //   html += MakeVarBasis(simplex, i, column, true)
+    // }
+  }
+
+  const copy = []
+  restricts.forEach(el => copy.push([...el.values, el.b]))
+  const gauss = Iteration(restricts.length, copy, restricts.length)
+  const tableArr = []
+  const bArr = []
+  gauss.forEach((arr, index) => {
+    bArr.push(arr[arr.length - 1])
+    tableArr.push([])
+    arr.forEach((el, j) => {
+      if (j < restricts.length || j === restricts[0].values.length) return
+      tableArr[index].push(clonedeep(el))
+    })
+  })
+  simplex.table = tableArr
+  simplex.b = bArr
+  simplex.total = tableArr[0].length
+  simplex.n = tableArr[0].length
+
+  const answer = []
+  let i = 0
+  for (i = 0; i < simplex.table[0].length; i++) {
+    answer.push(new Fraction())
+    for (let j = 0; j < simplex.table.length; j++) {
+      answer[i] = answer[i].add(
+        simplex.table[j][i].mult(func[simplex.basis[j]])
+      )
+    }
+    const l = func[simplex.b[i]]
+    answer[i] = answer[i].add(l)
+  }
+
+  answer.push(new Fraction())
+  for (let j = 0; j < simplex.table.length; j++) {
+    answer[i] = answer[i].add(simplex.b[j].mult(func[simplex.basis[j]]))
+  }
+  simplex.fn = answer
+
   return { simplex: simplex, html: html }
 }
 function CheckBasis(simplex) {
@@ -245,9 +304,10 @@ function MakeVarBasis(simplex, row, column, print = false) {
       'В качестве базисной переменной x<sub>' +
       (simplex.basis[row] + 1) +
       '</sub> берём x<sub>' +
-      (column + 1) +
+      (simplex.table.length + column + 1) +
       '</sub>.<br>'
-  simplex.basis[row] = column
+  simplex.row[column] = simplex.basis[row]
+  simplex.basis[row] = simplex.table.length + column
   if (print) html += PrintTable(simplex, row, column)
   let x = simplex.table[row][column]
   if (!x.isOne())
@@ -284,21 +344,9 @@ function IsColumnOne(simplex, column, row) {
   }
   return true
 }
-function IsColumnBasis(simplex, column, row) {
-  for (let i = 0; i < simplex.m; i++) {
-    if (i != row && !simplex.table[i][column].isZero()) return false
-    if (i == row && simplex.table[i][column].isZero()) return false
-  }
-  return true
-}
 function GetIdentityColumn(simplex, row) {
   for (let j = 0; j < simplex.total; j++)
     if (IsColumnOne(simplex, j, row)) return j
-  return -1
-}
-function GetBasisColumn(simplex, row) {
-  for (let j = 0; j < simplex.total; j++)
-    if (IsColumnBasis(simplex, j, row)) return j
   return -1
 }
 function RemoveZeroRow(simplex, row) {
@@ -317,54 +365,55 @@ function FindBasis(simplex) {
   }
   let html = '<b>Ищем базис</b><br>'
   for (let i = 0; i < simplex.basis.length; i++) {
-    if (simplex.basis[i] > -1) continue
-    let column = GetBasisColumn(simplex, i)
-    if (column > -1) {
-      html +=
-        'В качестве базисной переменной ?<sub>' +
-        -simplex.basis[i] +
-        '</sub> берём x<sub>' +
-        (column + 1) +
-        '</sub>'
-      html +=
-        '. Делим строку ' +
-        (i + 1) +
-        ' на ' +
-        simplex.table[i][column].print(printMode) +
-        '.<br>'
-      DivRow(simplex, i, simplex.table[i][column])
-      simplex.basis[i] = column
-    } else {
-      column = 0
-      while (column < simplex.total) {
-        if (IsBasisVar(simplex, column) || simplex.table[i][column].isZero()) {
-          column++
-        } else {
-          break
-        }
-      }
-      if (column == simplex.total) {
-        if (IsRowZero(simplex, i)) {
-          html +=
-            'Условие ' +
-            (i + 1) +
-            ' линейно зависимо с другими условиями. Исключаем его из дальнейшего расмотрения.<br>'
-          RemoveZeroRow(simplex, i)
-          html += 'Обновлённая симплекс-таблица:'
-          html += PrintTable(simplex)
-          i--
-          continue
-        } else {
-          html += '<br><b>Таблица:</b>'
-          html += PrintTable(simplex)
-          return (
-            html +
-            '<br>Обнаружено противоречивое условие. <b>Решение не существует</b>'
-          )
-        }
-      }
-      html += MakeVarBasis(simplex, i, column, true)
-    }
+    // if (simplex.basis[i] > -1) continue
+    let column = i
+    simplex.basis[i] = column
+    // if (column > -1) {
+    //   html +=
+    //     'В качестве базисной переменной ?<sub>' +
+    //     -simplex.basis[i] +
+    //     '</sub> берём x<sub>' +
+    //     (column + 1) +
+    //     '</sub>'
+    //   html +=
+    //     '. Делим строку ' +
+    //     (i + 1) +
+    //     ' на ' +
+    //     simplex.table[i][column].print(printMode) +
+    //     '.<br>'
+    //   DivRow(simplex, i, simplex.table[i][column])
+    //   simplex.basis[i] = column
+    // } else {
+    //   column = 0
+    //   while (column < simplex.total) {
+    //     if (IsBasisVar(simplex, column) || simplex.table[i][column].isZero()) {
+    //       column++
+    //     } else {
+    //       break
+    //     }
+    //   }
+    //   if (column == simplex.total) {
+    //     if (IsRowZero(simplex, i)) {
+    //       html +=
+    //         'Условие ' +
+    //         (i + 1) +
+    //         ' линейно зависимо с другими условиями. Исключаем его из дальнейшего расмотрения.<br>'
+    //       RemoveZeroRow(simplex, i)
+    //       html += 'Обновлённая симплекс-таблица:'
+    //       html += PrintTable(simplex)
+    //       i--
+    //       continue
+    //     } else {
+    //       html += '<br><b>Таблица:</b>'
+    //       html += PrintTable(simplex)
+    //       return (
+    //         html +
+    //         '<br>Обнаружено противоречивое условие. <b>Решение не существует</b>'
+    //       )
+    //     }
+    //   }
+    //   html += MakeVarBasis(simplex, i, column, true)
+    // }
   }
   html += '<br><b>Таблица:</b>'
   html += PrintTable(simplex)
@@ -506,12 +555,13 @@ function CheckPlan(simplex) {
   return true
 }
 function CheckPlanSolve(simplex) {
-  let hint = CreateHideOpenBlock(
-    'Критерий оптимальности',
-    'План оптимален, если в таблице отсутствуют ' +
-      (simplex.mode == MAX ? 'отрицательные' : 'положительные') +
-      ' дельты. '
-  )
+  let hint = ''
+  // let hint = CreateHideOpenBlock(
+  //   'Критерий оптимальности',
+  //   'План оптимален, если в таблице отсутствуют ' +
+  //     (simplex.mode == MAX ? 'отрицательные' : 'положительные') +
+  //     ' дельты. '
+  // )
   let html = '<b>Проверяем план на оптимальность:</b> '
   for (let i = 0; i < simplex.total; i++) {
     if (simplex.mode == MAX && simplex.deltas[i].isNeg()) {
@@ -551,6 +601,16 @@ function GetColumn(simplex) {
   }
   return jmax
 }
+
+function GetColumn2(simplex) {
+  let jmax = 0
+  for (let j = 1; j < simplex.total; j++) {
+    if (simplex.mode == MAX && simplex.fn[j].lt(simplex.fn[jmax])) jmax = j
+    else if (simplex.mode == MIN && simplex.fn[j].gt(simplex.fn[jmax])) jmax = j
+  }
+  return jmax
+}
+
 function GetQandRow(simplex, j) {
   let imin = -1
   for (let i = 0; i < simplex.m; i++) {
@@ -588,7 +648,7 @@ function CalcFunction(simplex) {
   let html = ''
   for (let i = 0; i < simplex.m; i++)
     F = F.add(simplex.C[simplex.basis[i]].mult(simplex.b[i]))
-  for (let i = 0; i < simplex.total; i++) {
+  for (let i = 0; i < simplex.basis.length + simplex.row.length; i++) {
     html += simplex.C[i].print(printMode) + '·'
     let index = simplex.basis.indexOf(i)
     if (index == -1) {
@@ -598,7 +658,7 @@ function CalcFunction(simplex) {
       html += simplex.b[index].printNg(printMode) + ' '
       X.push(simplex.b[index].print(printMode))
     }
-    if (i < simplex.total - 1) html += '+ '
+    if (i < simplex.basis.length + simplex.row.length - 1) html += '+ '
   }
   return { result: F, plan: '[ ' + X.join(', ') + ' ]', solve: html }
 }
@@ -606,13 +666,13 @@ function PrintTable(simplex, row = -1, col = -1) {
   let html = '<br>'
   let n = simplex.n
   html += "<table class='simplex-table'>"
-  html += '<tr><td><b>C</b></td>'
-  for (let i = 0; i < simplex.C.length; i++)
-    html += '<td>' + simplex.C[i].print(printMode) + '</td>'
-  html += '</tr>'
+  // html += '<tr><td><b>C</b></td>'
+  // for (let i = 0; i < simplex.C.length; i++)
+  //   html += '<td>' + simplex.C[i].print(printMode) + '</td>'
+  // html += '</tr>'
   html += '<tr><th>базис</th>'
-  for (let i = 0; i < simplex.total; i++)
-    html += '<th>x<sub>' + (i + 1) + '</sub></th>'
+  for (let i = 0; i < simplex.row.length; i++)
+    html += '<th>x<sub>' + (simplex.row[i] + 1) + '</sub></th>'
   html += '<th>b</th>'
   if (simplex.Q.length > 0) html += '<th>Q</th>'
   html += '</tr>'
@@ -654,6 +714,12 @@ function PrintTable(simplex, row = -1, col = -1) {
     }
     html += '</tr>'
   }
+  // if(simplex.fn.length > 0){
+  //   html += '<tr><td><b>p</b></td>'
+  //   for (let i = 0; i < simplex.fn.length; i++)
+  //     html += '<td>' + simplex.fn[i].print(printMode) + '</td>'
+  //   html += '</tr>'
+  // }
   if (simplex.deltas.length > 0) {
     html += '<tr><td><b>&Delta;</b></td>'
     for (let i = 0; i < simplex.deltas.length; i++)
@@ -666,7 +732,8 @@ function PrintTable(simplex, row = -1, col = -1) {
 }
 function PrintAnswer(simplex) {
   let answer = ''
-  for (let i = 0; i < simplex.n; i++) {
+  for (let i = 0; i < simplex.basis.length + simplex.row.length; i++) {
+    // debugger
     let index = simplex.basis.indexOf(i)
     answer += 'x<sub>' + (i + 1) + '</sub> = '
     if (index == -1) answer += '0, '
@@ -678,27 +745,13 @@ function PrintAnswer(simplex) {
   answer += 'F = ' + F.print(printMode)
   return answer
 }
-function InputToString(func, mode, restrictions) {
-  let s = 'f: '
-  for (let i = 0; i < func.length; i++) s += func[i].toString() + ' '
-  s += mode + ' '
-  for (let i = 0; i < restrictions.length; i++) {
-    s += ', rest ' + (i + 1) + ': ['
-    for (let j = 0; j < restrictions[i].values.length; j++) {
-      s += restrictions[i].values[j].toString() + ' '
-    }
-    s += restrictions[i].sign + ' ' + restrictions[i].b.toString() + ']'
-  }
-  return s
-}
 function SolveTable(n, m, func, restricts, mode, html) {
   html.innerHTML = ''
-  if (!NEGATIVE_BASIS) html.innerHTML += ChangeSigns(restricts)
   let init = PrepareTable(n, m, func, restricts, mode)
   html.innerHTML += init.html
   let simplex = init.simplex
-  html.innerHTML += '<b>Начальная симплекс-таблица</b>'
-  html.innerHTML += PrintTable(simplex)
+  // html.innerHTML += '<b>Начальная симплекс-таблица</b>'
+  // html.innerHTML += PrintTable(simplex)
   let res = true
   if (!CheckBasis(simplex)) html.innerHTML += FindBasis(simplex, html)
   if (!CheckBasis(simplex)) {
@@ -776,26 +829,6 @@ function onBack(html, iteration) {
   window.simplex = current
   window.step(current, html, iteration)
 }
-function onArtificialBack(html, iteration) {
-  if (iteration <= 2) {
-    if (iteration === 2) {
-      SolveArtificialBasis(
-        window.n,
-        window.m,
-        window.func,
-        window.restricts,
-        window.mode,
-        window.html
-      )
-    }
-    return
-  }
-  iteration -= 2
-  window.simplexStore.pop()
-  const current = window.simplexStore[window.simplexStore.length - 1]
-  window.simplex = current
-  window.stepArtificial(current, html, iteration)
-}
 function step(simplex, html, iteration) {
   if (!CheckPlan(simplex)) {
     window.simplexStore.push(clonedeep(simplex))
@@ -852,7 +885,7 @@ function step(simplex, html, iteration) {
     html.innerHTML += '<b>Симплекс-таблица с обновлёнными дельтами</b>'
     html.innerHTML += PrintTable(simplex)
     let F = CalcFunction(simplex)
-    html.innerHTML += '<b>Текущий план X:</b> ' + F.plan + '<br>'
+    // html.innerHTML += '<b>Текущий план X:</b> ' + F.plan + '<br>'
     html.innerHTML +=
       '<b>Целевая функция F:</b> ' +
       F.solve +
@@ -904,815 +937,32 @@ function step(simplex, html, iteration) {
     window['answer'] = answer
   }
 }
-function PrintAM(C, brackets = false) {
-  if (C.a.isZero() && C.m.isZero()) return '0'
-  if (brackets) {
-    if (C.a.isZero()) {
-      if (C.m.abs().isOne()) return C.m.isPos() ? 'M' : '- M'
-      return (
-        (C.m.isPos()
-          ? C.m.print(printMode)
-          : '- ' + C.m.abs().print(printMode)) + 'M'
-      )
-    }
-  }
-  if (C.a.isZero()) {
-    if (C.m.abs().isOne()) return C.m.isPos() ? 'M' : '-M'
-    return C.m.print(printMode) + 'M'
-  }
-  if (C.m.isZero()) return C.a.print(printMode)
-  let html = C.a.print(printMode)
-  if (brackets) html += '('
-  if (C.m.isNeg()) html += ' - '
-  else html += ' + '
-  if (C.m.abs().isOne()) html += 'M'
-  else html += C.m.abs().print(printMode) + 'M'
-  if (brackets) html += ')'
-  return html
-}
-function AddAM(v1, v2) {
-  let a = v1.a.add(v2.a)
-  let m = v1.m.add(v2.m)
-  return { a: a, m: m }
-}
-function SubAM(v1, v2) {
-  let a = v1.a.sub(v2.a)
-  let m = v1.m.sub(v2.m)
-  return { a: a, m: m }
-}
-function MultAM(v, x) {
-  let a = v.a.mult(x)
-  let m = v.m.mult(x)
-  return { a: a, m: m }
-}
-function LessAM(v1, v2) {
-  if (!v1.m.eq(v2.m)) return v1.m.lt(v2.m)
-  return v1.a.lt(v2.a)
-}
-function GreaterAM(v1, v2) {
-  if (!v1.m.eq(v2.m)) return v1.m.gt(v2.m)
-  return v1.a.gt(v2.a)
-}
-function IsPosAM(v) {
-  if (!v.m.isZero()) return v.m.isPos()
-  return v.a.isPos()
-}
-function IsNegAM(v) {
-  if (!v.m.isZero()) return v.m.isNeg()
-  return v.a.isNeg()
-}
-function IsZeroAM(v) {
-  return v.a.isZero() && v.m.isZero()
-}
-function ChangeSignsArtificialBasis(restricts) {
-  let htmlRes =
-    '<b>Меняем знаки у ограничений с отрицательными свободными коэффициентами, путём умножения на -1:</b><br>'
-  let have = false
-  for (let i = 0; i < restricts.length; i++) {
-    if (restricts[i].b.isNeg()) {
-      if (restricts[i].sign == GE) {
-        restricts[i].sign = LE
-      } else if (restricts[i].sign == LE) {
-        restricts[i].sign = GE
-      }
-      for (let j = 0; j < restricts[i].values.length; j++)
-        restricts[i].values[j].changeSign()
-      restricts[i].b.changeSign()
-      have = true
-    }
-    htmlRes += PrintFunction(restricts[i].values)
-    htmlRes += ' ' + restricts[i].sign + ' '
-    htmlRes += restricts[i].b.print(printMode)
-    htmlRes += '<br>'
-  }
-  htmlRes += '<br>'
-  return have ? htmlRes : ''
-}
-function PrintTableArtificialBasis(simplex, row = -1, col = -1) {
-  let html = '<br>'
-  let n = simplex.n
-  html += "<table class='simplex-table'>"
-  html += '<tr><td><b>C</b></td>'
-  for (let i = 0; i < simplex.C.length; i++) {
-    html += '<td>' + PrintAM(simplex.C[i]) + '</td>'
-  }
-  html += '</tr>'
-  html += '<tr><th>базис</th>'
-  for (let i = 0; i < simplex.total; i++) {
-    if (i < simplex.total - simplex.avars.length) {
-      html += '<th>x<sub>' + (i + 1) + '</sub></th>'
-    } else {
-      html +=
-        '<th>u<sub>' +
-        (i + 1 - simplex.total + simplex.avars.length) +
-        '</sub></th>'
-    }
-  }
-  html += '<th>b</th>'
-  if (simplex.Q.length > 0) html += '<th>Q</th>'
-  html += '</tr>'
-  for (let i = 0; i < simplex.m; i++) {
-    if (simplex.basis[i] < 0)
-      html += '<tr><td><b>?<sub>' + -simplex.basis[i] + '</sub></b></td>'
-    else if (simplex.basis[i] >= simplex.total - simplex.avars.length)
-      html +=
-        '<tr><td><b>u<sub>' +
-        (1 + simplex.basis[i] - simplex.total + simplex.avars.length) +
-        '</sub></b></td>'
-    else
-      html += '<tr><td><b>x<sub>' + (1 + simplex.basis[i]) + '</sub></b></td>'
-    for (let j = 0; j < simplex.table[i].length; j++) {
-      if (i == row && j == col) html += "<td class='row-col-cell'>"
-      else if (i == row) html += "<td class='row-cell'>"
-      else if (j == col) html += "<td class='col-cell'>"
-      else html += '<td>'
-      html += simplex.table[i][j].print(printMode)
-      html += '</td>'
-    }
-    if (i == row) html += "<td class='row-cell'>"
-    else html += '<td>'
-    html += simplex.b[i].print(printMode) + '</td>'
-    if (simplex.Q.length > 0) {
-      if (simplex.Q[i] == null) html += '<td>-</td>'
-      else if (col != -1) {
-        html +=
-          '<td' +
-          (i == row ? " class='row-cell'" : '') +
-          '>' +
-          simplex.b[i].print(printMode) +
-          ' / ' +
-          simplex.table[i][col].print(printMode) +
-          ' = ' +
-          simplex.Q[i].print(printMode) +
-          '</td>'
-      } else {
-        html += '<td>' + simplex.Q[i].print(printMode) + '</td>'
-      }
-    }
-    html += '</tr>'
-  }
-  if (simplex.deltas.length > 0) {
-    html += '<tr><td><b>&Delta;</b></td>'
-    for (let i = 0; i < simplex.deltas.length; i++)
-      html += '<td>' + PrintAM(simplex.deltas[i]) + '</td>'
-    html += '</tr>'
-  }
-  html += '</table>'
-  html += '<br>'
-  return html
-}
-function CalculateDeltasArtificialBasis(simplex) {
-  for (let j = 0; j < simplex.total; j++) {
-    let delta = { a: new Fraction('0'), m: new Fraction('0') }
-    for (let i = 0; i < simplex.m; i++)
-      delta = AddAM(
-        delta,
-        MultAM(simplex.C[simplex.basis[i]], simplex.table[i][j])
-      )
-    simplex.deltas[j] = SubAM(delta, simplex.C[j])
-  }
-  let delta = { a: new Fraction('0'), m: new Fraction('0') }
-  for (let i = 0; i < simplex.m; i++)
-    delta = AddAM(delta, MultAM(simplex.C[simplex.basis[i]], simplex.b[i]))
-  simplex.deltas[simplex.total] = SubAM(delta, simplex.C[simplex.total])
-}
-function CalculateDeltasArtificialBasisSolve(simplex) {
-  let html = ''
-  html += '&Delta;<sub>i</sub> = '
-  for (let i = 0; i < simplex.m; i++) {
-    html +=
-      'C<sub>' + (1 + simplex.basis[i]) + '</sub>·a<sub>' + (i + 1) + 'i</sub>'
-    if (i < simplex.m - 1) html += ' + '
-  }
-  html += ' - C<sub>i</sub><br>'
-  let hint = ''
-  for (let j = 0; j < simplex.total; j++) {
-    let formula = '&Delta;<sub>' + (j + 1) + '</sub> = '
-    let delta = ''
-    for (let i = 0; i < simplex.m; i++) {
-      formula +=
-        'C<sub>' +
-        (simplex.basis[i] + 1) +
-        '</sub>·a<sub>' +
-        (i + 1) +
-        (j + 1) +
-        '</sub>'
-      delta +=
-        PrintAM(simplex.C[simplex.basis[i]]) +
-        '·' +
-        simplex.table[i][j].printNg(printMode)
-      if (i < simplex.m - 1) {
-        delta += ' + '
-        formula += ' + '
-      }
-    }
-    formula += ' - C<sub>' + (j + 1) + '</sub>'
-    delta += ' - ' + PrintAM(simplex.C[j])
-    delta += ' = ' + PrintAM(simplex.deltas[j])
-    hint += formula + ' = ' + delta + '<br>'
-  }
-  let formula = '&Delta;<sub>b</sub> = '
-  let delta = ''
-  for (let i = 0; i < simplex.m; i++) {
-    formula +=
-      'C<sub>' + (simplex.basis[i] + 1) + '</sub>·b<sub>' + (i + 1) + '</sub>'
-    delta +=
-      PrintAM(simplex.C[simplex.basis[i]]) +
-      '·' +
-      simplex.b[i].printNg(printMode)
-    if (i < simplex.m - 1) {
-      delta += ' + '
-      formula += ' + '
-    }
-  }
-  formula += ' - C<sub>' + (simplex.total + 1) + '</sub>'
-  delta += ' - ' + PrintAM(simplex.C[simplex.total])
-  delta += ' = ' + PrintAM(simplex.deltas[simplex.total])
-  hint += formula + ' = ' + delta
-  hint = CreateScrollBlock(hint)
-  html += CreateHideOpenBlock('Подробный расчёт дельт', hint)
-  return html
-}
-function PrepareArtificialBasis(n, m, func, restricts, mode) {
-  let k = 0
-  for (let i = 0; i < restricts.length; i++) if (restricts[i].sign != EQ) k++
-  let htmlRes = ''
-  if (k > 2) {
-    htmlRes +=
-      'Для каждого ограничения с неравенством <b>добавляем дополнительные переменные</b> x<sub>' +
-      (n + 1) +
-      '</sub>..x<sub>' +
-      (n + k) +
-      '</sub>.<br>'
-  } else if (k == 2) {
-    htmlRes +=
-      'Для каждого ограничения с неравенством <b>добавляем дополнительные переменные</b> x<sub>' +
-      (n + 1) +
-      '</sub> и x<sub>' +
-      (n + k) +
-      '</sub>.<br>'
-  } else if (k == 1) {
-    htmlRes +=
-      'Для ограничения с неравенством <b>добавляем дополнительную переменную</b> x<sub>' +
-      (n + 1) +
-      '</sub>.<br>'
-  }
-  let simplex = {
-    n: n,
-    m: m,
-    total: n + k,
-    mode: mode,
-    table: [],
-    b: [],
-    basis: [],
-    avars: [],
-    C: [],
-    deltas: [],
-    Q: [],
-  }
-  let unknown = -1
-  let index = 0
-  let basishtmlRes = []
-  for (let i = 0; i < m; i++) {
-    simplex.table[i] = []
-    for (let j = 0; j < n; j++) simplex.table[i].push(restricts[i].values[j])
-    let inserted = false
-    if (restricts[i].sign == EQ) {
-      simplex.basis.push(unknown)
-      unknown--
-      basishtmlRes[simplex.basis.length - 1] =
-        'Ограничение ' +
-        (i + 1) +
-        ' содержит равенство. Базисная переменная для этого ограничения будет определена позднее.<br>'
-    } else if (restricts[i].sign == GE) {
-      simplex.basis.push(unknown)
-      unknown--
-      basishtmlRes[simplex.basis.length - 1] =
-        'Ограничение ' +
-        (i + 1) +
-        ' содержит неравенство с ' +
-        GE +
-        '. Базисная переменная для этого ограничения будет определена позднее.<br>'
-    }
-    for (let j = 0; j < k; j++) {
-      if (restricts[i].sign == EQ) {
-        simplex.table[i].push(new Fraction('0'))
-      } else if (restricts[i].sign == LE) {
-        if (j != index || inserted) {
-          simplex.table[i].push(new Fraction('0'))
-        } else if (!inserted) {
-          simplex.table[i].push(new Fraction('1'))
-          simplex.basis.push(n + index)
-          basishtmlRes[simplex.basis.length - 1] =
-            'Ограничение ' +
-            (i + 1) +
-            ' содержит неравенство, базисной будет добавленная дополнительная переменная x<sub>' +
-            (n + index + 1) +
-            '</sub><br>'
-          index++
-          inserted = true
-        }
-      } else {
-        if (j != index || inserted) {
-          simplex.table[i].push(new Fraction('0'))
-        } else if (!inserted) {
-          simplex.table[i].push(new Fraction('-1'))
-          index++
-          inserted = true
-        }
-      }
-    }
-    simplex.b[i] = restricts[i].b
-  }
-  unknown = 0
-  for (let i = 0; i < m; i++) {
-    if (simplex.basis[i] >= 0) continue
-    let column = GetIdentityColumn(simplex, i)
-    if (column != -1) {
-      simplex.basis[i] = column
-      basishtmlRes[i] =
-        'Столбец ' +
-        (column + 1) +
-        ' является частью единичной матрицы. Переменная x<sub>' +
-        (column + 1) +
-        '</sub> входит в начальный базис<br>'
-    } else {
-      unknown++
-    }
-  }
-  for (let i = 0; i < n; i++) {
-    simplex.C.push({ a: func[i], m: new Fraction('0') })
-  }
-  for (let i = 0; i < k; i++) {
-    simplex.C.push({ a: new Fraction('0'), m: new Fraction('0') })
-  }
-  simplex.C.push({ a: new Fraction('0'), m: new Fraction('0') })
-  htmlRes += basishtmlRes.join('')
-  htmlRes += '<br><b>Начальная симплекс-таблица</b>'
-  htmlRes += PrintTableArtificialBasis(simplex)
-  simplex.total += unknown
-  if (unknown == 0) {
-    htmlRes +=
-      'Так как были найдены все базисные переменные, то нет необходимости добавления искусственных переменных.<br><br>'
-  } else {
-    for (let i = 0; i < unknown; i++) {
-      simplex.avars.push(i)
-      for (let j = 0; j < m; j++) simplex.table[j].push(new Fraction('0'))
-    }
-    index = 0
-    for (let i = 0; i < m; i++) {
-      if (simplex.basis[i] >= 0) continue
-      htmlRes +=
-        'Для ограничения ' +
-        (i + 1) +
-        ' добавляем искусственную переменную u<sub>' +
-        (index + 1) +
-        '</sub> и делаем её базисной.<br>'
-      simplex.table[i][n + k + index] = new Fraction('1')
-      simplex.basis[i] = n + k + index
-      index++
-    }
-    simplex.C.pop()
-    for (let i = 0; i < unknown; i++) {
-      simplex.C.push({
-        a: new Fraction('0'),
-        m: new Fraction(mode == MIN ? '1' : '-1'),
-      })
-    }
-    simplex.C.push({ a: new Fraction('0'), m: new Fraction('0') })
-    htmlRes +=
-      'В целевую функцию добавляем искусственные пременные с коэффициентом ' +
-      (mode == MAX ? '-M' : 'M') +
-      ', где M — очень большое число.<br>'
-    htmlRes += '<br><b>Таблица с искусственными переменными</b>'
-    htmlRes += PrintTableArtificialBasis(simplex)
-    htmlRes +=
-      '<b>Перепишем условие задачи с учётом добавленных искусственных переменных:</b><br>'
-    htmlRes += 'F = '
-    let printed = false
-    for (let i = 0; i < simplex.total; i++) {
-      if (IsZeroAM(simplex.C[i])) continue
-      if (printed) {
-        if (simplex.C[i].a.isZero())
-          htmlRes += simplex.C[i].m.isPos() ? ' + ' : ' '
-        else if (simplex.C[i].m.isZero())
-          htmlRes += simplex.C[i].a.isPos() ? ' + ' : ' '
-        else htmlRes += ' + '
-      }
-      htmlRes += PrintAM(simplex.C[i], true)
-      printed = true
-      if (i < simplex.total - simplex.avars.length) {
-        htmlRes += 'x<sub>' + (i + 1) + '</sub>'
-      } else {
-        htmlRes +=
-          'u<sub>' + (i + 1 - simplex.total + simplex.avars.length) + '</sub>'
-      }
-    }
-    htmlRes += ' &rarr; ' + mode + '<br>'
-    for (let i = 0; i < m; i++) {
-      printed = false
-      for (let j = 0; j < simplex.total; j++) {
-        if (simplex.table[i][j].isZero()) continue
-        if (printed && simplex.table[i][j].isPos()) htmlRes += '+ '
-        if (simplex.table[i][j].isNeg()) {
-          if (simplex.table[i][j].abs().isOne()) htmlRes += '- '
-          else
-            htmlRes += '- ' + simplex.table[i][j].abs().print(printMode) + '·'
-        } else {
-          if (!simplex.table[i][j].isOne())
-            htmlRes += simplex.table[i][j].print(printMode) + '·'
-        }
-        printed = true
-        if (j < simplex.total - simplex.avars.length) {
-          htmlRes += 'x<sub>' + (j + 1) + '</sub> '
-        } else {
-          htmlRes +=
-            'u<sub>' +
-            (j + 1 - simplex.total + simplex.avars.length) +
-            '</sub> '
-        }
-      }
-      htmlRes += '= ' + simplex.b[i].print(printMode) + '<br>'
-    }
-    htmlRes +=
-      '<br><b>Выразим искусственные переменные через базовые' +
-      (k > 0 ? ' и дополнительные' : '') +
-      ':</b><br>'
-    for (let i = 0; i < m; i++) {
-      if (simplex.basis[i] < simplex.total - simplex.avars.length) continue
-      htmlRes +=
-        'u<sub>' +
-        (1 + simplex.basis[i] - simplex.total + simplex.avars.length) +
-        '</sub> = ' +
-        simplex.b[i].print(printMode)
-      for (let j = 0; j < n + k; j++) {
-        if (simplex.table[i][j].isZero()) continue
-        if (simplex.table[i][j].isNeg()) {
-          htmlRes += ' + '
-        } else {
-          htmlRes += ' - '
-        }
-        if (!simplex.table[i][j].abs().isOne())
-          htmlRes += simplex.table[i][j].abs().print(printMode) + '·'
-        htmlRes += 'x<sub>' + (j + 1) + '</sub>'
-      }
-      htmlRes += '<br>'
-    }
-    htmlRes += '<br>'
-  }
-  return { simplex: simplex, html: htmlRes }
-}
-function CheckPlanArtificialBasis(simplex) {
-  for (let i = 0; i < simplex.total; i++) {
-    if (simplex.mode == MAX && IsNegAM(simplex.deltas[i])) return false
-    if (simplex.mode == MIN && IsPosAM(simplex.deltas[i])) return false
-  }
-  return true
-}
-function CheckPlanArtificialBasisSolve(simplex) {
-  let hint = CreateHideOpenBlock(
-    'Критерий оптимальности',
-    'План оптимален, если в таблице отсутствуют ' +
-      (simplex.mode == MAX ? 'отрицательные' : 'положительные') +
-      ' дельты. '
-  )
-  let html = '<b>Проверяем план на оптимальность:</b> '
-  for (let i = 0; i < simplex.total; i++) {
-    if (simplex.mode == MAX && IsNegAM(simplex.deltas[i])) {
-      html +=
-        'план <b>не оптимален</b>, так как &Delta;<sub>' +
-        (i + 1) +
-        '</sub> = ' +
-        PrintAM(simplex.deltas[i]) +
-        ' отрицательна.<br>'
-      html += hint
-      return html
-    }
-    if (simplex.mode == MIN && IsPosAM(simplex.deltas[i])) {
-      html +=
-        'план <b>не оптимален</b>, так как &Delta;<sub>' +
-        (i + 1) +
-        '</sub> = ' +
-        PrintAM(simplex.deltas[i]) +
-        ' положительна.<br>'
-      html += hint
-      return html
-    }
-  }
-  html +=
-    (simplex.mode == MAX ? 'отрицательные' : 'положительные') +
-    ' дельты отсутствуют, следовательно <b>план оптимален</b>.<br>'
-  html += hint
-  return html
-}
-function GetQandRowArtificialBasis(simplex, j) {
-  let imin = -1
-  let imina = -1
-  for (let i = 0; i < simplex.m; i++) {
-    simplex.Q[i] = null
-    if (simplex.table[i][j].isZero()) continue
-    let q = simplex.b[i].div(simplex.table[i][j])
-    if (q.isNeg() || (simplex.b[i].isZero() && simplex.table[i][j].isNeg()))
-      continue
-    simplex.Q[i] = q
-    if (simplex.basis[i] >= simplex.total - simplex.avars.length) {
-      if (imina == -1 || q.lt(simplex.Q[imina])) imina = i
-    }
-    if (imin == -1 || q.lt(simplex.Q[imin])) imin = i
-  }
-  return imina == -1 ? imin : imina
-}
-function GetColumnArtificialBasis(simplex) {
-  let jmax = 0
-  for (let j = 1; j < simplex.total; j++) {
-    if (simplex.mode == MAX && LessAM(simplex.deltas[j], simplex.deltas[jmax]))
-      jmax = j
-    else if (
-      simplex.mode == MIN &&
-      GreaterAM(simplex.deltas[j], simplex.deltas[jmax])
-    )
-      jmax = j
-  }
-  return jmax
-}
-function MakeVarBasisArtificial(simplex, row, column, print = false) {
-  console.log(3)
-  let html = ''
-  if (simplex.basis[row] >= simplex.total - simplex.avars.length)
-    html +=
-      'В качестве базисной переменной u<sub>' +
-      (1 + simplex.basis[row] - simplex.total + simplex.avars.length) +
-      '</sub> берём x<sub>' +
-      (column + 1) +
-      '</sub>.<br>'
-  else
-    html +=
-      'В качестве базисной переменной x<sub>' +
-      (simplex.basis[row] + 1) +
-      '</sub> берём x<sub>' +
-      (column + 1) +
-      '</sub>.<br>'
-  simplex.basis[row] = column
-  if (print) html += PrintTableArtificialBasis(simplex, row, column)
-  let x = simplex.table[row][column]
-  if (!x.isOne())
-    html += 'Делим строку ' + (row + 1) + ' на ' + x.print(printMode) + '. '
-  let rows = []
-  for (let i = 1; i <= simplex.m; i++) if (i != row + 1) rows.push(i)
-  if (rows.length > 1) html += 'Из строк ' + rows.join(', ')
-  else html += 'Из строки ' + rows[0]
-  html +=
-    ' вычитаем строку ' +
-    (row + 1) +
-    ', умноженную на соответствующий элемент в столбце ' +
-    (column + 1) +
-    '.<br>'
-  DivRow(simplex, row, x)
-  SubRows(simplex, row, column)
-  return html
-}
-function CalcFunctionArtificialBasis(simplex) {
-  let F = { a: new Fraction('0'), m: new Fraction('0') }
-  let X = []
-  let html = ''
-  for (let i = 0; i < simplex.m; i++)
-    F = AddAM(F, MultAM(simplex.C[simplex.basis[i]], simplex.b[i]))
-  for (let i = 0; i < simplex.total; i++) {
-    html += PrintAM(simplex.C[i]) + '·'
-    let index = simplex.basis.indexOf(i)
-    if (index == -1) {
-      html += '0 '
-      X.push('0')
-    } else {
-      html += simplex.b[index].printNg(printMode) + ' '
-      X.push(simplex.b[index].print(printMode))
-    }
-    if (i < simplex.total - 1) html += '+ '
-  }
-  return { result: F, plan: '[ ' + X.join(', ') + ' ]', solve: html }
-}
-function PrintAnswerArtificialBasis(simplex) {
-  let answer = ''
-  for (let i = 0; i < simplex.n; i++) {
-    let index = simplex.basis.indexOf(i)
-    answer += 'x<sub>' + (i + 1) + '</sub> = '
-    if (index == -1) answer += '0, '
-    else answer += simplex.b[index].print(printMode) + ', '
-  }
-  let F = { a: new Fraction('0'), m: new Fraction('0') }
-  for (let i = 0; i < simplex.m; i++)
-    F = AddAM(F, MultAM(simplex.C[simplex.basis[i]], simplex.b[i]))
-  answer += 'F = ' + PrintAM(F)
-  return answer
-}
-function HaveArtificialBasis(simplex, zero = true) {
-  for (let i = 0; i < simplex.basis.length; i++)
-    if (
-      simplex.basis[i] >= simplex.total - simplex.avars.length &&
-      (!zero || !simplex.b[i].isZero())
-    )
-      return true
-  return false
-}
-function SolveArtificialBasis(n, m, func, restricts, mode, html) {
-  html.innerHTML += ChangeSignsArtificialBasis(restricts)
-  let init = PrepareArtificialBasis(n, m, func, restricts, mode)
-  let simplex = init.simplex
-  html.innerHTML += init.html
-  CalculateDeltasArtificialBasis(simplex)
-  html.innerHTML += '<b>Вычисляем дельты:</b> '
-  html.innerHTML += CalculateDeltasArtificialBasisSolve(simplex)
-  html.innerHTML += '<b>Симплекс-таблица с дельтами</b>'
-  html.innerHTML += PrintTableArtificialBasis(simplex)
-  let iteration = 1
-  let F = CalcFunctionArtificialBasis(simplex)
-  html.innerHTML += '<b>Текущий план X:</b> ' + F.plan + '<br>'
-  html.innerHTML +=
-    '<b>Целевая функция F:</b> ' + F.solve + ' = ' + PrintAM(F.result) + '<br>'
-  html.innerHTML += CheckPlanArtificialBasisSolve(simplex)
-
-  window['iteration'] = iteration
-  window['simplex'] = simplex
-  window['html'] = html
-  window['n'] = n
-  window['m'] = m
-  window['func'] = func
-  window['restricts'] = restricts
-  window['mode'] = mode
-
-  if (!InputStoreService.getAutoselect()) {
-    const sInput = document.createElement('input')
-    sInput.setAttribute('type', 'text')
-    sInput.placeholder = 'column'
-    sInput.id = `column_${iteration}`
-    html.appendChild(sInput)
-
-    const fInput = document.createElement('input')
-    fInput.setAttribute('type', 'text')
-    fInput.placeholder = 'row'
-    fInput.id = `row_${iteration}`
-    html.appendChild(fInput)
-  }
-
-  let simplexStore = []
-  window['simplexStore'] = simplexStore
-
-  if (InputStoreService.getSolution()) {
-    html.innerHTML +=
-      '<button onclick="window.stepArtificial(simplex, html, iteration)">Continue</button>'
-  } else {
-    stepArtificial(simplex, html, iteration)
-  }
-}
-function stepArtificial(simplex, html, iteration) {
-  if (!CheckPlanArtificialBasis(simplex)) {
-    window.simplexStore.push(clonedeep(simplex))
-    let column = GetColumnArtificialBasis(simplex, iteration)
-    let row = GetQandRowArtificialBasis(simplex, column, iteration)
-    if (!InputStoreService.getAutoselect()) {
-      column =
-        parseInt(document.getElementById(`column_${iteration}`).value, 10) - 1
-      row = parseInt(document.getElementById(`row_${iteration}`).value, 10) - 1
-    }
-    html.innerHTML += '<h3>Итерация ' + iteration + '</h3>'
-    html.innerHTML +=
-      'Определяем <i>разрешающий столбец</i> - столбец, в котором находится '
-    html.innerHTML +=
-      (simplex.mode == MAX ? 'минимальная' : 'максимальная') + ' дельта: '
-    html.innerHTML +=
-      column +
-      1 +
-      ', &Delta;<sub>' +
-      (column + 1) +
-      '</sub>: ' +
-      PrintAM(simplex.deltas[column]) +
-      '<br>'
-    html.innerHTML +=
-      'Находим симплекс-отношения Q, путём деления коэффициентов b на соответствующие значения столбца ' +
-      (column + 1) +
-      '<br>'
-    if (row == -1) {
-      html.innerHTML += PrintTableArtificialBasis(simplex, -1, column)
-      html.innerHTML +=
-        'Все значения столбца ' + (column + 1) + ' неположительны.<br>'
-      html.innerHTML +=
-        '<b>Функция не ограничена. Оптимальное решение отсутствует</b>.<br>'
-      window['answer'] =
-        'Функция не ограничена. Оптимальное решение отсутствует.'
-      return
-    }
-    html.innerHTML +=
-      'В найденном столбце ищем строку с наименьшим значением Q: Q<sub>min</sub> = ' +
-      simplex.Q[row].print(printMode) +
-      ', строка ' +
-      (row + 1) +
-      '.<br>'
-    html.innerHTML +=
-      'На пересечении найденных строки и столбца находится <i>разрешающий элемент</i>: ' +
-      simplex.table[row][column].print(printMode) +
-      '<br>'
-    html.innerHTML += MakeVarBasisArtificial(simplex, row, column, true)
-    CalculateDeltasArtificialBasis(simplex)
-    html.innerHTML += '<b>Вычисляем новые дельты:</b> '
-    html.innerHTML += CalculateDeltasArtificialBasisSolve(simplex)
-    html.innerHTML += '<b>Симплекс-таблица с обновлёнными дельтами</b>'
-    html.innerHTML += PrintTableArtificialBasis(simplex)
-    let F = CalcFunctionArtificialBasis(simplex)
-    html.innerHTML += '<b>Текущий план X:</b> ' + F.plan + '<br>'
-    html.innerHTML +=
-      '<b>Целевая функция F:</b> ' +
-      F.solve +
-      ' = ' +
-      PrintAM(F.result) +
-      '<br>'
-    iteration++
-    html.innerHTML += CheckPlanArtificialBasisSolve(simplex)
-
-    window['iteration'] = iteration
-    window['simplex'] = simplex
-    window['html'] = html
-
-    if (!InputStoreService.getAutoselect()) {
-      const sInput = document.createElement('input')
-      sInput.setAttribute('type', 'text')
-      sInput.placeholder = 'column'
-      sInput.id = `column_${iteration}`
-      html.appendChild(sInput)
-
-      const fInput = document.createElement('input')
-      fInput.setAttribute('type', 'text')
-      fInput.placeholder = 'row'
-      fInput.id = `row_${iteration}`
-      html.appendChild(fInput)
-    }
-
-    if (InputStoreService.getSolution()) {
-      html.innerHTML +=
-        '<button onclick="window.stepArtificial(simplex, html, iteration)">Continue</button>'
-
-      html.innerHTML +=
-        '<button onclick="window.onArtificialBack(html, iteration)">Back</button>'
-    } else {
-      stepArtificial(simplex, html, iteration)
-    }
-  } else {
-    if (HaveArtificialBasis(simplex)) {
-      html.innerHTML +=
-        'Так как в оптимальном решении пристуствуют искусственные переменные, то задача не имеет допустимого решения.'
-      window['answer'] = 'Задача не имеет допустимого решения.'
-      return
-    }
-    if (HaveNegativeB(simplex)) {
-      html.innerHTML +=
-        'В столбце b присутствуют отрицательные значения. Решения не существует.'
-      window['answer'] = 'Решения не существует.'
-      return
-    }
-    if (HaveArtificialBasis(simplex, false)) {
-      html.innerHTML +=
-        'Искусственные переменные остались базисными, однако свободный коэффициент при них равен нулю.<br>'
-    }
-    html.innerHTML += '<b>Ответ:</b> '
-    let answer = PrintAnswerArtificialBasis(simplex)
-    html.innerHTML += '<b>Ответ:</b> ' + answer
-    window['answer'] = answer
-  }
-}
 function Solve() {
-  try {
-    let solveBox = document.getElementById('simplex-solve')
-    let n = InputStoreService.getMaxX()
-    let m = InputStoreService.getRowCount()
-    let mode = InputStoreService.getMode()
-    let func = InputStoreService.getFuncArray()
-    let restricts = InputStoreService.getValueArray()
-    printMode = InputStoreService.getFraction() ? 1 : 2
-    solveBox.innerHTML = '<h3>Введённые данные</h3>'
-    solveBox.innerHTML += "<div class='scroll-block'>"
-    solveBox.innerHTML += PrintFunction(func)
-    solveBox.innerHTML += '&rarr; ' + mode
+  let solveBox = document.getElementById('simplex-solve')
+  let n = InputStoreService.getMaxX()
+  let m = InputStoreService.getRowCount()
+  let mode = InputStoreService.getMode()
+  let func = InputStoreService.getFuncArray()
+  let restricts = InputStoreService.getValueArray()
+  printMode = InputStoreService.getFraction() ? 1 : 2
+  solveBox.innerHTML = '<h3>Введённые данные</h3>'
+  solveBox.innerHTML += "<div class='scroll-block'>"
+  solveBox.innerHTML += PrintFunction(func)
+  solveBox.innerHTML += '&rarr; ' + mode
+  solveBox.innerHTML += '<br>'
+  for (let i = 0; i < m; i++) {
+    solveBox.innerHTML += PrintFunction(restricts[i].values)
+    solveBox.innerHTML += ' ' + restricts[i].sign + ' '
+    solveBox.innerHTML += restricts[i].b.print(printMode)
     solveBox.innerHTML += '<br>'
-    for (let i = 0; i < m; i++) {
-      solveBox.innerHTML += PrintFunction(restricts[i].values)
-      solveBox.innerHTML += ' ' + restricts[i].sign + ' '
-      solveBox.innerHTML += restricts[i].b.print(printMode)
-      solveBox.innerHTML += '<br>'
-    }
-    solveBox.innerHTML += '</div>'
-    if (InputStoreService.getSolution()) {
-      if (InputStoreService.getSolveType() == 1) {
-        SolveTable(n, m, func, restricts, mode, solveBox)
-      } else {
-        SolveTable(n, m, func, restricts, mode, solveBox)
-        // SolveArtificialBasis(n, m, func, restricts, mode, solveBox)
-      }
-    } else {
-      const div = document.createElement('div')
-      SolveTable(n, m, func, restricts, mode, div)
-      solveBox.innerHTML += '<h3>Ответ</h3>' + window.answer
-    }
-  } catch (e) {
-    alert('Ошибка: ' + e)
+  }
+  solveBox.innerHTML += '</div>'
+  if (InputStoreService.getSolution()) {
+    SolveTable(n, m, func, restricts, mode, solveBox)
+  } else {
+    const div = document.createElement('div')
+    SolveTable(n, m, func, restricts, mode, div)
+    solveBox.innerHTML += '<h3>Ответ</h3>' + window.answer
   }
 }
 
@@ -1720,7 +970,5 @@ export const init = () => {
   window.Solve = Solve
   window.step = step
   window.onBack = onBack
-  window.stepArtificial = stepArtificial
-  window.onArtificialBack = onArtificialBack
 }
 window.Solve = Solve
