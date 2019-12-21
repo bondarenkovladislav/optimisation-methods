@@ -190,66 +190,83 @@ function PrepareTable(n, m, func, restricts, mode) {
   if (!InputStoreService.xo.length) {
     html += findHtml + basisHtml.join('') + '<br>'
   }
-  for (let i = 0; i < restricts[0].values.length; i++) {
-    if (i < simplex.basis.length) {
-      simplex.basis[i] = i
-    } else {
-      simplex.row.push(i)
+
+  if (InputStoreService.xo && InputStoreService.xo.length) {
+    simplex.basis = []
+    InputStoreService.xo.forEach((el, index) => {
+      if (el === '1') {
+        simplex.basis.push(index)
+      } else {
+        simplex.row.push(index)
+      }
+    })
+  } else {
+    for (let i = 0; i < restricts[0].values.length; i++) {
+      if (i < simplex.basis.length) {
+        simplex.basis[i] = i
+      } else {
+        simplex.row.push(i)
+      }
+      // if (simplex.basis[i] > -1) continue
+      // let column = i
+      // simplex.basis[i] = column
+      // if (column > -1) {
+      //   html +=
+      //     'В качестве базисной переменной ?<sub>' +
+      //     -simplex.basis[i] +
+      //     '</sub> берём x<sub>' +
+      //     (column + 1) +
+      //     '</sub>'
+      //   html +=
+      //     '. Делим строку ' +
+      //     (i + 1) +
+      //     ' на ' +
+      //     simplex.table[i][column].print(printMode) +
+      //     '.<br>'
+      //   DivRow(simplex, i, simplex.table[i][column])
+      //   simplex.basis[i] = column
+      // } else {
+      //   column = 0
+      //   while (column < simplex.total) {
+      //     if (IsBasisVar(simplex, column) || simplex.table[i][column].isZero()) {
+      //       column++
+      //     } else {
+      //       break
+      //     }
+      //   }
+      //   if (column == simplex.total) {
+      //     if (IsRowZero(simplex, i)) {
+      //       html +=
+      //         'Условие ' +
+      //         (i + 1) +
+      //         ' линейно зависимо с другими условиями. Исключаем его из дальнейшего расмотрения.<br>'
+      //       RemoveZeroRow(simplex, i)
+      //       html += 'Обновлённая симплекс-таблица:'
+      //       html += PrintTable(simplex)
+      //       i--
+      //       continue
+      //     } else {
+      //       html += '<br><b>Таблица:</b>'
+      //       html += PrintTable(simplex)
+      //       return (
+      //         html +
+      //         '<br>Обнаружено противоречивое условие. <b>Решение не существует</b>'
+      //       )
+      //     }
+      //   }
+      //   html += MakeVarBasis(simplex, i, column, true)
+      // }
     }
-    // if (simplex.basis[i] > -1) continue
-    // let column = i
-    // simplex.basis[i] = column
-    // if (column > -1) {
-    //   html +=
-    //     'В качестве базисной переменной ?<sub>' +
-    //     -simplex.basis[i] +
-    //     '</sub> берём x<sub>' +
-    //     (column + 1) +
-    //     '</sub>'
-    //   html +=
-    //     '. Делим строку ' +
-    //     (i + 1) +
-    //     ' на ' +
-    //     simplex.table[i][column].print(printMode) +
-    //     '.<br>'
-    //   DivRow(simplex, i, simplex.table[i][column])
-    //   simplex.basis[i] = column
-    // } else {
-    //   column = 0
-    //   while (column < simplex.total) {
-    //     if (IsBasisVar(simplex, column) || simplex.table[i][column].isZero()) {
-    //       column++
-    //     } else {
-    //       break
-    //     }
-    //   }
-    //   if (column == simplex.total) {
-    //     if (IsRowZero(simplex, i)) {
-    //       html +=
-    //         'Условие ' +
-    //         (i + 1) +
-    //         ' линейно зависимо с другими условиями. Исключаем его из дальнейшего расмотрения.<br>'
-    //       RemoveZeroRow(simplex, i)
-    //       html += 'Обновлённая симплекс-таблица:'
-    //       html += PrintTable(simplex)
-    //       i--
-    //       continue
-    //     } else {
-    //       html += '<br><b>Таблица:</b>'
-    //       html += PrintTable(simplex)
-    //       return (
-    //         html +
-    //         '<br>Обнаружено противоречивое условие. <b>Решение не существует</b>'
-    //       )
-    //     }
-    //   }
-    //   html += MakeVarBasis(simplex, i, column, true)
-    // }
   }
 
   const copy = []
   restricts.forEach(el => copy.push([...el.values, el.b]))
-  const gauss = Iteration(restricts.length, copy, restricts.length)
+  const gauss = Iteration(
+    restricts.length,
+    copy,
+    restricts.length,
+    InputStoreService.xo
+  )
   const tableArr = []
   const bArr = []
   gauss.forEach((arr, index) => {

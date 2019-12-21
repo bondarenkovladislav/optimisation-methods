@@ -1,7 +1,36 @@
 import { Fraction } from './test/FractionsHelper'
 
-export function Iteration(n, m, iter_item) {
-  //Функция итеррация
+export function Iteration(n, m, iter_item, x0) {
+  const history = []
+  if (x0 && x0.length) {
+    const arr = []
+    m.forEach(() => {
+      arr.push([])
+    })
+
+    x0.forEach((el, index) => {
+      if (el === '1') {
+        for (let z = 0; z < m.length; z++) {
+          arr[z].push(m[z][index])
+        }
+        history.push(index)
+      }
+    })
+    x0.forEach((el, index) => {
+      if (el === '0') {
+        for (let z = 0; z < m.length; z++) {
+          arr[z].push(m[z][index])
+        }
+        history.push(index)
+      }
+    })
+    for (let z = 0; z < m.length; z++) {
+      arr[z].push(m[z][m[z].length - 1])
+    }
+    history.push(m[0].length - 1)
+    m = arr
+  }
+
   for (iter_item = 0; iter_item < n; iter_item++) {
     let r = m[iter_item][iter_item]
     if (m[iter_item][iter_item].isZero()) m = SwapRows(n, m, iter_item) //Проверка на ноль
@@ -18,6 +47,19 @@ export function Iteration(n, m, iter_item) {
         }
       }
     }
+  }
+  if (x0 && x0.length) {
+    const returned = []
+    m.forEach(() => {
+      returned.push([])
+    })
+
+    history.forEach(el => {
+      for (let z = 0; z < m.length; z++) {
+        returned[z].push(m[z][el])
+      }
+    })
+    m = returned
   }
   return m
 }
