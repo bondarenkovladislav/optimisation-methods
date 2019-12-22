@@ -41,7 +41,25 @@ function PrintFunction(func) {
   if (!start) html += '0'
   return html
 }
+function PrepareData(func, restricts, mode) {
+  if (mode === MAX) {
+    for (let i = 0; i < func.length; i++) {
+      func[i] = func[i].mult(new Fraction('-1'))
+    }
+    mode = MIN
+  }
+  for (let i = 0; i < restricts.length; i++) {
+    if (restricts[i].b < 0) {
+      for (let j = 0; j < restricts[i].values.length; j++) {
+        restricts[i].values[j] = restricts[i].values[j].mult(new Fraction('-1'))
+      }
+      restricts[i].b = restricts[i].b.mult(new Fraction('-1'))
+    }
+  }
+  return [func, restricts, mode]
+}
 function PrepareTable(n, m, func, restricts, mode) {
+  [func, restricts, mode] = PrepareData(func, restricts, mode)
   const res = []
   let k = 0
   if (InputStoreService.getSolveType() === 2) {
@@ -51,7 +69,7 @@ function PrepareTable(n, m, func, restricts, mode) {
   let simplex = {
     n: n,
     m: m,
-    total: n + k,
+    total: n,
     mode: mode,
     table: [],
     b: [],
@@ -126,40 +144,41 @@ function PrepareTable(n, m, func, restricts, mode) {
     //       '. Базисная переменная для этого ограничения будет определена позднее.<br>'
     //   }
     // }
-    if (InputStoreService.getSolveType() === 2) {
-      for (let j = 0; j < k; j++) {
-        // if (restricts[i].sign == EQ) {
-
-        // } else if (!NEGATIVE_BASIS || restricts[i].sign == LE) {
-        //   if (j != index || inserted) {
-        //     simplex.table[sii].push(new Fraction('0'))
-        //   } else
-        if (!inserted && j === pasteIndex) {
-          simplex.table[i].push(new Fraction('1'))
-          simplex.basis.push(n + index)
-          basisHtml[simplex.basis.length - 1] =
-            'Ограничение ' +
-            (i + 1) +
-            ' содержит неравенство, базисной будет добавленная дополнительная переменная x<sub>' +
-            (n + index + 1) +
-            '</sub><br>'
-          index++
-          inserted = true
-          pasteIndex++
-        } else {
-          simplex.table[i].push(new Fraction('0'))
-        }
-        // } else if (NEGATIVE_BASIS) {
-        //   if (j != index || inserted) {
-        //     simplex.table[i].push(new Fraction('0'))
-        //   } else if (!inserted) {
-        //     simplex.table[i].push(new Fraction('-1'))
-        //     index++
-        //     inserted = true
-        //   }
-        // }
-      }
-    }
+    // debugger
+    // if (InputStoreService.getSolveType() === 2) {
+    //   for (let j = 0; j < k; j++) {
+    //     // if (restricts[i].sign == EQ) {
+    //
+    //     // } else if (!NEGATIVE_BASIS || restricts[i].sign == LE) {
+    //     //   if (j != index || inserted) {
+    //     //     simplex.table[sii].push(new Fraction('0'))
+    //     //   } else
+    //     if (!inserted && j === pasteIndex) {
+    //       // simplex.table[i].push(new Fraction('1'))
+    //       simplex.basis.push(n + index)
+    //       // basisHtml[simplex.basis.length - 1] =
+    //       //   'Ограничение ' +
+    //       //   (i + 1) +
+    //       //   ' содержит неравенство, базисной будет добавленная дополнительная переменная x<sub>' +
+    //       //   (n + index + 1) +
+    //       //   '</sub><br>'
+    //       index++
+    //       inserted = true
+    //       pasteIndex++
+    //     } else {
+    //       // simplex.table[i].push(new Fraction('0'))
+    //     }
+    //     // } else if (NEGATIVE_BASIS) {
+    //     //   if (j != index || inserted) {
+    //     //     simplex.table[i].push(new Fraction('0'))
+    //     //   } else if (!inserted) {
+    //     //     simplex.table[i].push(new Fraction('-1'))
+    //     //     index++
+    //     //     inserted = true
+    //     //   }
+    //     // }
+    //   }
+    // }
     simplex.b[i] = restricts[i].b
     systemHtml +=
       PrintFunction(simplex.table[i]) +
@@ -167,20 +186,22 @@ function PrepareTable(n, m, func, restricts, mode) {
       simplex.b[i].print(printMode) +
       '<br>'
   }
-  let unknown = -1
-  for (let i = 0; i < m; i++) {
-    if (simplex.basis[i] > -1) continue
-    let column = GetIdentityColumn(simplex, i)
-    if (column == -1) {
-      simplex.basis[i] = unknown--
-    } else {
-      simplex.basis[i] = column
-      basisHtml[i] =
-        'Столбец ' +
-        (column + 1) +
-        ' является частью единичной матрицы. Переменная x<sub>' +
-        (column + 1) +
-        '</sub> входит в начальный базис<br>'
+  if(InputStoreService.getSolveType() === 1) {
+    let unknown = -1
+    for (let i = 0; i < m; i++) {
+      if (simplex.basis[i] > -1) continue
+      let column = GetIdentityColumn(simplex, i)
+      if (column == -1) {
+        simplex.basis[i] = unknown--
+      } else {
+        simplex.basis[i] = column
+        basisHtml[i] =
+            'Столбец ' +
+            (column + 1) +
+            ' является частью единичной матрицы. Переменная x<sub>' +
+            (column + 1) +
+            '</sub> входит в начальный базис<br>'
+      }
     }
   }
   if (k > 0) {
@@ -201,106 +222,141 @@ function PrepareTable(n, m, func, restricts, mode) {
       }
     })
   } else {
-    for (let i = 0; i < restricts[0].values.length; i++) {
-      if (i < simplex.basis.length) {
-        simplex.basis[i] = i
-      } else {
+    if (InputStoreService.getSolveType() === 1) {
+      for (let i = 0; i < restricts[0].values.length; i++) {
+        if (i < simplex.basis.length) {
+          simplex.basis[i] = i
+        } else {
+          simplex.row.push(i)
+        }
+        // if (simplex.basis[i] > -1) continue
+        // let column = i
+        // simplex.basis[i] = column
+        // if (column > -1) {
+        //   html +=
+        //     'В качестве базисной переменной ?<sub>' +
+        //     -simplex.basis[i] +
+        //     '</sub> берём x<sub>' +
+        //     (column + 1) +
+        //     '</sub>'
+        //   html +=
+        //     '. Делим строку ' +
+        //     (i + 1) +
+        //     ' на ' +
+        //     simplex.table[i][column].print(printMode) +
+        //     '.<br>'
+        //   DivRow(simplex, i, simplex.table[i][column])
+        //   simplex.basis[i] = column
+        // } else {
+        //   column = 0
+        //   while (column < simplex.total) {
+        //     if (IsBasisVar(simplex, column) || simplex.table[i][column].isZero()) {
+        //       column++
+        //     } else {
+        //       break
+        //     }
+        //   }
+        //   if (column == simplex.total) {
+        //     if (IsRowZero(simplex, i)) {
+        //       html +=
+        //         'Условие ' +
+        //         (i + 1) +
+        //         ' линейно зависимо с другими условиями. Исключаем его из дальнейшего расмотрения.<br>'
+        //       RemoveZeroRow(simplex, i)
+        //       html += 'Обновлённая симплекс-таблица:'
+        //       html += PrintTable(simplex)
+        //       i--
+        //       continue
+        //     } else {
+        //       html += '<br><b>Таблица:</b>'
+        //       html += PrintTable(simplex)
+        //       return (
+        //         html +
+        //         '<br>Обнаружено противоречивое условие. <b>Решение не существует</b>'
+        //       )
+        //     }
+        //   }
+        //   html += MakeVarBasis(simplex, i, column, true)
+        // }
+      }
+    }
+    else {
+      for(let i = 0; i< m; i++) {
+        simplex.basis.push(simplex.n + i)
+      }
+      for(let i=0; i< restricts[0].values.length; i++) {
         simplex.row.push(i)
       }
-      // if (simplex.basis[i] > -1) continue
-      // let column = i
-      // simplex.basis[i] = column
-      // if (column > -1) {
-      //   html +=
-      //     'В качестве базисной переменной ?<sub>' +
-      //     -simplex.basis[i] +
-      //     '</sub> берём x<sub>' +
-      //     (column + 1) +
-      //     '</sub>'
-      //   html +=
-      //     '. Делим строку ' +
-      //     (i + 1) +
-      //     ' на ' +
-      //     simplex.table[i][column].print(printMode) +
-      //     '.<br>'
-      //   DivRow(simplex, i, simplex.table[i][column])
-      //   simplex.basis[i] = column
-      // } else {
-      //   column = 0
-      //   while (column < simplex.total) {
-      //     if (IsBasisVar(simplex, column) || simplex.table[i][column].isZero()) {
-      //       column++
-      //     } else {
-      //       break
-      //     }
-      //   }
-      //   if (column == simplex.total) {
-      //     if (IsRowZero(simplex, i)) {
-      //       html +=
-      //         'Условие ' +
-      //         (i + 1) +
-      //         ' линейно зависимо с другими условиями. Исключаем его из дальнейшего расмотрения.<br>'
-      //       RemoveZeroRow(simplex, i)
-      //       html += 'Обновлённая симплекс-таблица:'
-      //       html += PrintTable(simplex)
-      //       i--
-      //       continue
-      //     } else {
-      //       html += '<br><b>Таблица:</b>'
-      //       html += PrintTable(simplex)
-      //       return (
-      //         html +
-      //         '<br>Обнаружено противоречивое условие. <b>Решение не существует</b>'
-      //       )
-      //     }
-      //   }
-      //   html += MakeVarBasis(simplex, i, column, true)
-      // }
     }
   }
 
   const copy = []
-  restricts.forEach(el => copy.push([...el.values, el.b]))
-  const gauss = Iteration(
-    restricts.length,
-    copy,
-    restricts.length,
-    InputStoreService.xo
-  )
-  const tableArr = []
-  const bArr = []
-  gauss.forEach((arr, index) => {
-    bArr.push(arr[arr.length - 1])
-    tableArr.push([])
-    arr.forEach((el, j) => {
-      if (j < restricts.length || j === restricts[0].values.length) return
-      tableArr[index].push(clonedeep(el))
+  if (InputStoreService.getSolveType() === 1) {
+    restricts.forEach(el => copy.push([...el.values, el.b]))
+  }
+  // else {
+  //   restricts.forEach((arr, i) => {
+  //     copy.push([])
+  //     arr.values.forEach(el => {
+  //       copy[i].push(el)
+  //     })
+  //     simplex.basis.forEach((item, j) => {
+  //       if (j === i) {
+  //         copy[i].push(new Fraction('1'))
+  //       } else {
+  //         copy[i].push(new Fraction())
+  //       }
+  //     })
+  //     copy[i].push(arr.b)
+  //   })
+  // }
+
+  let x0 = InputStoreService.xo
+  // if (InputStoreService.getSolveType() === 2) {
+  //   x0 = []
+  //   for (let b = 0; b < n; b++) {
+  //     x0.push('0')
+  //     simplex.row.push(b)
+  //   }
+  //   simplex.basis.forEach(() => x0.push('1'))
+  // }
+
+  if (InputStoreService.getSolveType() === 1) {
+    const gauss = Iteration(restricts.length, copy, restricts.length, x0)
+    const tableArr = []
+    const bArr = []
+    gauss.forEach((arr, index) => {
+      bArr.push(arr[arr.length - 1])
+      tableArr.push([])
+      arr.forEach((el, j) => {
+        if (j < restricts.length || j === restricts[0].values.length) return
+        tableArr[index].push(clonedeep(el))
+      })
     })
-  })
-  simplex.table = tableArr
-  simplex.b = bArr
-  simplex.total = tableArr[0].length
-  simplex.n = tableArr[0].length
-
-  const answer = []
-  let i = 0
-  for (i = 0; i < simplex.table[0].length; i++) {
-    answer.push(new Fraction())
-    for (let j = 0; j < simplex.table.length; j++) {
-      answer[i] = answer[i].add(
-        simplex.table[j][i].mult(func[simplex.basis[j]])
-      )
-    }
-    const l = func[simplex.b[i]]
-    answer[i] = answer[i].add(l)
+    simplex.table = tableArr
+    simplex.b = bArr
+    simplex.total = tableArr[0].length
+    simplex.n = tableArr[0].length
   }
 
-  answer.push(new Fraction())
-  for (let j = 0; j < simplex.table.length; j++) {
-    answer[i] = answer[i].add(simplex.b[j].mult(func[simplex.basis[j]]))
-  }
-  simplex.fn = answer
+  // const answer = []
+  // let i = 0
+  // for (i = 0; i < simplex.table[0].length; i++) {
+  //   answer.push(new Fraction())
+  //   for (let j = 0; j < simplex.table.length; j++) {
+  //     answer[i] = answer[i].add(
+  //       simplex.table[j][i].mult(func[simplex.basis[j]])
+  //     )
+  //   }
+  //   const l = func[simplex.b[i]]
+  //   answer[i] = answer[i].add(l)
+  // }
 
+  // answer.push(new Fraction())
+  // for (let j = 0; j < simplex.table.length; j++) {
+  //   answer[i] = answer[i].add(simplex.b[j].mult(func[simplex.basis[j]]))
+  // }
+  // simplex.fn = answer
   return { simplex: simplex, html: html }
 }
 function CheckBasis(simplex) {
@@ -321,10 +377,11 @@ function MakeVarBasis(simplex, row, column, print = false) {
       'В качестве базисной переменной x<sub>' +
       (simplex.basis[row] + 1) +
       '</sub> берём x<sub>' +
-      (simplex.table.length + column + 1) +
+      (simplex.row[column] + 1) +
       '</sub>.<br>'
+  const item = simplex.row[column]
   simplex.row[column] = simplex.basis[row]
-  simplex.basis[row] = simplex.table.length + column
+  simplex.basis[row] = item
   if (print) html += PrintTable(simplex, row, column)
   let x = simplex.table[row][column]
   if (!x.isOne())
@@ -565,6 +622,13 @@ function CalculateDeltasSolve(simplex) {
   return html
 }
 function CheckPlan(simplex) {
+  if (InputStoreService.getSolveType() === 2) {
+    for (let i = 0; i < simplex.basis.length; i++) {
+      if (simplex.basis[i] >= simplex.n) {
+        return false
+      }
+    }
+  }
   for (let i = 0; i < simplex.total; i++) {
     if (simplex.mode == MAX && simplex.deltas[i].isNeg()) return false
     if (simplex.mode == MIN && simplex.deltas[i].isPos()) return false
@@ -580,6 +644,14 @@ function CheckPlanSolve(simplex) {
   //     ' дельты. '
   // )
   let html = '<b>Проверяем план на оптимальность:</b> '
+  if (InputStoreService.getSolveType() === 2) {
+    for (let i = 0; i < simplex.basis.length; i++) {
+      if (simplex.basis[i] >= simplex.n) {
+        html += 'Таблица содержит искуственные переменные, продолжаем решение.'
+        return html
+      }
+    }
+  }
   for (let i = 0; i < simplex.total; i++) {
     if (simplex.mode == MAX && simplex.deltas[i].isNeg()) {
       html +=
@@ -618,7 +690,6 @@ function GetColumn(simplex) {
   }
   return jmax
 }
-
 function GetColumn2(simplex) {
   let jmax = 0
   for (let j = 1; j < simplex.total; j++) {
@@ -627,7 +698,6 @@ function GetColumn2(simplex) {
   }
   return jmax
 }
-
 function GetQandRow(simplex, j) {
   let imin = -1
   for (let i = 0; i < simplex.m; i++) {
@@ -768,7 +838,9 @@ function SolveTable(n, m, func, restricts, mode, html) {
   html.innerHTML += init.html
   let simplex = init.simplex
   // html.innerHTML += '<b>Начальная симплекс-таблица</b>'
-  // html.innerHTML += PrintTable(simplex)
+  if (InputStoreService.getSolveType() === 2) {
+    html.innerHTML += PrintTable(simplex)
+  }
   let res = true
   if (!CheckBasis(simplex)) html.innerHTML += FindBasis(simplex, html)
   if (!CheckBasis(simplex)) {
@@ -776,15 +848,15 @@ function SolveTable(n, m, func, restricts, mode, html) {
     html.innerHTML = 'Решение задачи не существует'
     return
   }
-  while (HaveNegativeB(simplex) && res) {
-    html.innerHTML += 'В столбце b присутствуют отрицательные значения.<br>'
-    res = CheckSolveNegativeB(simplex)
-    html.innerHTML += RemoveNegativeB(simplex)
-  }
-  if (!res) {
-    window['answer'] = 'Решение задачи не существует.'
-    return
-  }
+  // while (HaveNegativeB(simplex) && res) {
+  //   html.innerHTML += 'В столбце b присутствуют отрицательные значения.<br>'
+  //   res = CheckSolveNegativeB(simplex)
+  //   html.innerHTML += RemoveNegativeB(simplex)
+  // }
+  // if (!res) {
+  //   window['answer'] = 'Решение задачи не существует.'
+  //   return
+  // }
   CalculateDeltas(simplex)
   html.innerHTML += '<b>Вычисляем дельты:</b> '
   html.innerHTML += CalculateDeltasSolve(simplex)
@@ -896,11 +968,30 @@ function step(simplex, html, iteration) {
       simplex.table[row][column].print(printMode) +
       '<br>'
     html.innerHTML += MakeVarBasis(simplex, row, column, true)
-    CalculateDeltas(simplex)
-    html.innerHTML += '<b>Вычисляем новые дельты:</b> '
-    html.innerHTML += CalculateDeltasSolve(simplex)
-    html.innerHTML += '<b>Симплекс-таблица с обновлёнными дельтами</b>'
-    html.innerHTML += PrintTable(simplex)
+    if (
+      InputStoreService.getSolveType() === 1 ||
+      simplex.row[column] < simplex.n
+    ) {
+      CalculateDeltas(simplex)
+      html.innerHTML += '<b>Вычисляем новые дельты:</b> '
+      html.innerHTML += CalculateDeltasSolve(simplex)
+      html.innerHTML += '<b>Симплекс-таблица с обновлёнными дельтами</b>'
+      html.innerHTML += PrintTable(simplex)
+    }
+
+    if (InputStoreService.getSolveType() === 2) {
+      if (simplex.row[column] >= simplex.n) {
+        html.innerHTML += '<b>Исключаем текущий столбец</b>'
+        for (let i = 0; i < simplex.table.length; i++) {
+          simplex.table[i].splice(column, 1)
+        }
+        simplex.deltas.splice(column, 1)
+        simplex.row.splice(column, 1)
+        simplex.total--
+        html.innerHTML += PrintTable(simplex)
+      }
+    }
+
     let F = CalcFunction(simplex)
     // html.innerHTML += '<b>Текущий план X:</b> ' + F.plan + '<br>'
     html.innerHTML +=

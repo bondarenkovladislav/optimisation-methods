@@ -93,7 +93,6 @@ export const InputCoef = () => {
     if (shouldInit) {
       const arr: string[] = []
       coefLabels.forEach((coef, i) => arr.push(`${i}`))
-      // arr.push(`${10}`)
       arr.push('min')
       setFuncArray(arr)
     }
@@ -187,10 +186,10 @@ export const InputCoef = () => {
               {/*/>*/}
               <span>-></span>
               <Autocomplete
-                value={funcArray[coefLabels.length + 1]}
+                value={funcArray[coefLabels.length]}
                 options={['max', 'min']}
                 renderInput={params => <TextField {...params} label={'Тип'} />}
-                onChange={(e, v) => onFuncValueChange(coefLabels.length + 1, v)}
+                onChange={(e, v) => onFuncValueChange(coefLabels.length, v)}
               />
             </Grid>
             <Typography variant={'h6'}>Ограничения</Typography>
@@ -352,9 +351,29 @@ export const InputCoef = () => {
               Введите размерность
             </DialogTitle>
             <DialogContent>
+              <Tooltip title="Введите размерность матрицы коэффициентов">
+                <TextField
+                    label={'Кол-во переменных'}
+                    onChange={e => {
+                      try {
+                        const value = parseInt(e.target.value, 10)
+                        if (!value) {
+                          throw new Error('nan')
+                        }
+                        setVariablesCount(value)
+                        setShouldInit(true)
+                        if (e.target.value !== '' && rowsCount) {
+                          setOpenDialog(false)
+                        }
+                      } catch (e) {
+                        setOpenSnack(true)
+                      }
+                    }}
+                />
+              </Tooltip>
               <Tooltip title="Введите размерность задачи">
                 <TextField
-                  label={'Размерность задачи'}
+                  label={'Кол-во ограничений'}
                   onChange={e => {
                     try {
                       const value = parseInt(e.target.value, 10)
@@ -372,26 +391,6 @@ export const InputCoef = () => {
                         variablesCount &&
                         variablesCount > 0
                       ) {
-                        setOpenDialog(false)
-                      }
-                    } catch (e) {
-                      setOpenSnack(true)
-                    }
-                  }}
-                />
-              </Tooltip>
-              <Tooltip title="Введите размерность матрицы коэффициентов">
-                <TextField
-                  label={'Матрица коэфф'}
-                  onChange={e => {
-                    try {
-                      const value = parseInt(e.target.value, 10)
-                      if (!value) {
-                        throw new Error('nan')
-                      }
-                      setVariablesCount(value)
-                      setShouldInit(true)
-                      if (e.target.value !== '' && rowsCount) {
                         setOpenDialog(false)
                       }
                     } catch (e) {
