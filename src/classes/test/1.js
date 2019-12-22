@@ -78,6 +78,7 @@ function PrepareTable(n, m, func, restricts, mode) {
     Q: [],
     row: [],
     fn: [],
+    tableVersion: 0,
   }
   let html = ''
   if (k > 2) {
@@ -314,7 +315,8 @@ function CheckPlanSolve(simplex) {
   if (InputStoreService.getSolveType() === 2) {
     for (let i = 0; i < simplex.basis.length; i++) {
       if (simplex.basis[i] >= simplex.n) {
-        html += 'Таблица содержит искуственные переменные, продолжаем решение.'
+        html +=
+          '<div>Таблица содержит искуственные переменные, продолжаем решение.</div>'
         return html
       }
     }
@@ -409,9 +411,14 @@ function CalcFunction(simplex) {
   return { result: F, plan: '[ ' + X.join(', ') + ' ]', solve: html }
 }
 function PrintTable(simplex, row = -1, col = -1) {
+  simplex.tableVersion++
   let html = '<br>'
   let n = simplex.n
-  html += "<table class='simplex-table'>"
+  const id = simplex.tableVersion
+  html +=
+    "<table class='simplex-table' onclick='window.onTableCick(event, this)' id='tb" +
+    simplex.tableVersion +
+    "'>"
   // html += '<tr><td><b>C</b></td>'
   // for (let i = 0; i < simplex.C.length; i++)
   //   html += '<td>' + simplex.C[i].print(printMode) + '</td>'
@@ -535,8 +542,16 @@ function SolveTable(n, m, func, restricts, mode, html) {
   window.simplexStore.push(clonedeep(simplex))
 
   if (InputStoreService.getSolution()) {
-    html.innerHTML +=
-      '<button onclick="window.step(simplex, html, iteration)">Continue</button>'
+    const button = document.createElement('button')
+    button.className = 'button'
+    button.textContent = 'Продолжить'
+    button.addEventListener('click', () => {
+      button.disabled = true
+      window.step(simplex, html, iteration)
+    })
+    html.appendChild(button)
+    // html.innerHTML +=
+    //   '<div><button onclick="window.step(simplex, html, iteration)">К следующему шагу</button></div>'
   } else {
     step(simplex, html, iteration)
   }
@@ -561,11 +576,23 @@ function onBack(html, iteration) {
   window.simplex = current
   window.step(current, html, iteration)
 }
-function step(simplex, html, iteration) {
+function step(
+  simplex,
+  html,
+  iteration,
+  selectedRow = null,
+  selectedColumn = null
+) {
   if (!CheckPlan(simplex)) {
     window.simplexStore.push(clonedeep(simplex))
     let column = GetColumn(simplex, iteration)
     let row = GetQandRow(simplex, column, iteration)
+
+    if (selectedRow !== null && selectedColumn !== null) {
+      row = selectedRow
+      column = selectedColumn
+    }
+
     if (!InputStoreService.getAutoselect()) {
       column =
         parseInt(document.getElementById(`column_${iteration}`).value, 10) - 1
@@ -573,18 +600,22 @@ function step(simplex, html, iteration) {
     }
 
     html.innerHTML += '<h3>Итерация ' + iteration + '</h3>'
-    html.innerHTML +=
-      'Определяем <i>разрешающий столбец</i> - столбец, в котором находится '
-    html.innerHTML +=
-      (simplex.mode == MAX ? 'минимальная' : 'максимальная') + ' дельта: '
-    html.innerHTML +=
-      column +
-      1 +
-      ', &Delta;<sub>' +
-      (column + 1) +
-      '</sub>: ' +
-      simplex.deltas[column].print(printMode) +
-      '<br>'
+    if (selectedRow === null || selectedColumn === null) {
+      html.innerHTML +=
+        'Определяем <i>разрешающий столбец</i> - столбец, в котором находится '
+      html.innerHTML +=
+        (simplex.mode == MAX ? 'минимальная' : 'максимальная') + ' дельта: '
+      html.innerHTML +=
+        column +
+        1 +
+        ', &Delta;<sub>' +
+        (column + 1) +
+        '</sub>: ' +
+        simplex.deltas[column].print(printMode) +
+        '<br>'
+    } else {
+      html.innerHTML += 'Выбранный разрешающий столбец: ' + `${column + 1}<br>`
+    }
     html.innerHTML +=
       'Находим симплекс-отношения Q, путём деления коэффициентов b на соответствующие значения столбца ' +
       (column + 1) +
@@ -600,12 +631,16 @@ function step(simplex, html, iteration) {
         'Функция не ограничена. Оптимальное решение отсутствует.'
       return
     }
-    html.innerHTML +=
-      'В найденном столбце ищем строку с наименьшим значением Q: Q<sub>min</sub> = ' +
-      simplex.Q[row].print(printMode) +
-      ', строка ' +
-      (row + 1) +
-      '.<br>'
+    if (selectedRow === null || selectedColumn === null) {
+      html.innerHTML +=
+        'В найденном столбце ищем строку с наименьшим значением Q: Q<sub>min</sub> = ' +
+        simplex.Q[row].print(printMode) +
+        ', строка ' +
+        (row + 1) +
+        '.<br>'
+    } else {
+      html.innerHTML += 'Выбранная разрешающая строка: ' + `${row + 1}<br>`
+    }
     html.innerHTML +=
       'На пересечении найденных строки и столбца находится <i>разрешающий элемент</i>: ' +
       simplex.table[row][column].print(printMode) +
@@ -644,7 +679,6 @@ function step(simplex, html, iteration) {
       '<br>'
     iteration++
     html.innerHTML += CheckPlanSolve(simplex)
-    const button = document.createElement('button')
     window['iteration'] = iteration
     window['simplex'] = simplex
     window['html'] = html
@@ -663,10 +697,28 @@ function step(simplex, html, iteration) {
       html.appendChild(fInput)
     }
     if (InputStoreService.getSolution()) {
-      html.innerHTML +=
-        '<button onclick="window.step(simplex, html, iteration)">Continue</button>'
-      html.innerHTML +=
-        '<button onclick="window.onBack(html, iteration)">Back</button>'
+      const div = document.createElement('div')
+      let button, button2
+      button = document.createElement('button')
+      button.className = 'button'
+      button.textContent = 'Продолжить'
+      button.addEventListener('click', () => {
+        button.disabled = true
+        button2.disabled = true
+        window.step(simplex, html, iteration)
+      })
+
+      button2 = document.createElement('button')
+      button2.className = 'button'
+      button2.textContent = 'Назад'
+      button2.addEventListener('click', () => {
+        button2.disabled = true
+        button.disabled = true
+        window.onBack(html, iteration)
+      })
+      div.appendChild(button)
+      div.appendChild(button2)
+      html.appendChild(div)
     } else {
       step(simplex, html, iteration)
     }
@@ -712,10 +764,59 @@ function Solve() {
     solveBox.innerHTML += '<h3>Ответ</h3>' + window.answer
   }
 }
+function onTableClick(e, table) {
+  try {
+    const tbAvailableWidthIndex = window.simplex.table[0].length + 1
+    const tbAvailableHeightIndex = window.simplex.table.length + 1
+    const rIndex = e.target.closest('tr').rowIndex
+    const cIndex = e.target.cellIndex
+    if (
+        window.simplex.tableVersion == table.id.replace('tb', '') &&
+        rIndex > 0 &&
+        rIndex < tbAvailableHeightIndex &&
+        cIndex > 0 &&
+        cIndex < tbAvailableWidthIndex
+    ) {
+      if (e.target.innerText <= 0) {
+        return
+      }
+      const simplexColIndex = cIndex - 1
+      const simplexRowIndex = rIndex - 1
+      let min
+      for (let i = 0; i < window.simplex.table.length; i++) {
+        const value = window.simplex.b[simplexRowIndex].div(
+            window.simplex.table[i][simplexColIndex]
+        )
+        if (value.isNeg()) {
+          continue
+        }
+        if (!min || value.lt(min)) {
+          min = value
+        }
+      }
+      let div = window.simplex.b[simplexRowIndex].div(
+          window.simplex.table[simplexRowIndex][simplexColIndex]
+      )
+      if (div.eq(min)) {
+        window.step(
+            window.simplex,
+            window.html,
+            window.iteration,
+            simplexRowIndex,
+            simplexColIndex
+        )
+      }
+    }
+  }
+  catch (e) {
+    return;
+  }
+}
 
 export const init = () => {
   window.Solve = Solve
   window.step = step
   window.onBack = onBack
+  window.onTableCick = onTableClick
 }
 window.Solve = Solve
