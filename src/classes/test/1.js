@@ -59,13 +59,12 @@ function PrepareData(func, restricts, mode) {
   return [func, restricts, mode]
 }
 function PrepareTable(n, m, func, restricts, mode) {
-  [func, restricts, mode] = PrepareData(func, restricts, mode)
+  ;[func, restricts, mode] = PrepareData(func, restricts, mode)
   const res = []
   let k = 0
   if (InputStoreService.getSolveType() === 2) {
     k = m
   }
-  // for (let i = 0; i < restricts.length; i++) if (restricts[i].sign != EQ) k++
   let simplex = {
     n: n,
     m: m,
@@ -81,7 +80,6 @@ function PrepareTable(n, m, func, restricts, mode) {
     fn: [],
   }
   let html = ''
-  // if (!InputStoreService.xo.length) {
   if (k > 2) {
     html +=
       'Для каждого ограничения <b>добавляем дополнительные переменные</b> x<sub>' +
@@ -102,17 +100,11 @@ function PrepareTable(n, m, func, restricts, mode) {
       (n + 1) +
       '</sub>.<br>'
   }
-  // }
 
   for (let i = 0; i < n; i++) simplex.C.push(func[i])
   for (let i = 0; i < k; i++) simplex.C.push(new Fraction())
   simplex.C.push(new Fraction('0'))
   let findHtml = ''
-  if (InputStoreService.getSolveType() === 2) {
-    findHtml = !InputStoreService.xo.length
-      ? '<b>Ищем начальное базисное решение:</b><br>'
-      : ''
-  }
 
   let index = 0
   let basisHtml = []
@@ -122,63 +114,6 @@ function PrepareTable(n, m, func, restricts, mode) {
     simplex.table[i] = []
     for (let j = 0; j < n; j++) simplex.table[i].push(restricts[i].values[j])
     let inserted = false
-
-    // simplex.basis.push(unknown)
-    // unknown--
-    // if (!InputStoreService.getSolveType() === 2) {
-    //   if (restricts[i].sign == EQ) {
-    //     simplex.basis.push(unknown)
-    //     unknown--
-    //     basisHtml[simplex.basis.length - 1] =
-    //       'Ограничение ' +
-    //       (i + 1) +
-    //       ' содержит равенство. Базисная переменная для этого ограничения будет определена позднее.<br>'
-    //   } else if (NEGATIVE_BASIS && restricts[i].sign == GE) {
-    //     simplex.basis.push(unknown)
-    //     unknown--
-    //     basisHtml[simplex.basis.length - 1] =
-    //       'Ограничение ' +
-    //       (i + 1) +
-    //       ' содержит неравенство с ' +
-    //       GE +
-    //       '. Базисная переменная для этого ограничения будет определена позднее.<br>'
-    //   }
-    // }
-    // debugger
-    // if (InputStoreService.getSolveType() === 2) {
-    //   for (let j = 0; j < k; j++) {
-    //     // if (restricts[i].sign == EQ) {
-    //
-    //     // } else if (!NEGATIVE_BASIS || restricts[i].sign == LE) {
-    //     //   if (j != index || inserted) {
-    //     //     simplex.table[sii].push(new Fraction('0'))
-    //     //   } else
-    //     if (!inserted && j === pasteIndex) {
-    //       // simplex.table[i].push(new Fraction('1'))
-    //       simplex.basis.push(n + index)
-    //       // basisHtml[simplex.basis.length - 1] =
-    //       //   'Ограничение ' +
-    //       //   (i + 1) +
-    //       //   ' содержит неравенство, базисной будет добавленная дополнительная переменная x<sub>' +
-    //       //   (n + index + 1) +
-    //       //   '</sub><br>'
-    //       index++
-    //       inserted = true
-    //       pasteIndex++
-    //     } else {
-    //       // simplex.table[i].push(new Fraction('0'))
-    //     }
-    //     // } else if (NEGATIVE_BASIS) {
-    //     //   if (j != index || inserted) {
-    //     //     simplex.table[i].push(new Fraction('0'))
-    //     //   } else if (!inserted) {
-    //     //     simplex.table[i].push(new Fraction('-1'))
-    //     //     index++
-    //     //     inserted = true
-    //     //   }
-    //     // }
-    //   }
-    // }
     simplex.b[i] = restricts[i].b
     systemHtml +=
       PrintFunction(simplex.table[i]) +
@@ -186,27 +121,10 @@ function PrepareTable(n, m, func, restricts, mode) {
       simplex.b[i].print(printMode) +
       '<br>'
   }
-  if(InputStoreService.getSolveType() === 1) {
-    let unknown = -1
+  if (InputStoreService.getSolveType() === 1) {
     for (let i = 0; i < m; i++) {
-      if (simplex.basis[i] > -1) continue
-      let column = GetIdentityColumn(simplex, i)
-      if (column == -1) {
-        simplex.basis[i] = unknown--
-      } else {
-        simplex.basis[i] = column
-        basisHtml[i] =
-            'Столбец ' +
-            (column + 1) +
-            ' является частью единичной матрицы. Переменная x<sub>' +
-            (column + 1) +
-            '</sub> входит в начальный базис<br>'
-      }
+      simplex.basis[i] = i
     }
-  }
-  if (k > 0) {
-    html += 'Перепишем ограничения в каноническом виде:<br>'
-    html += systemHtml + '<br>'
   }
   if (!InputStoreService.xo.length) {
     html += findHtml + basisHtml.join('') + '<br>'
@@ -229,100 +147,26 @@ function PrepareTable(n, m, func, restricts, mode) {
         } else {
           simplex.row.push(i)
         }
-        // if (simplex.basis[i] > -1) continue
-        // let column = i
-        // simplex.basis[i] = column
-        // if (column > -1) {
-        //   html +=
-        //     'В качестве базисной переменной ?<sub>' +
-        //     -simplex.basis[i] +
-        //     '</sub> берём x<sub>' +
-        //     (column + 1) +
-        //     '</sub>'
-        //   html +=
-        //     '. Делим строку ' +
-        //     (i + 1) +
-        //     ' на ' +
-        //     simplex.table[i][column].print(printMode) +
-        //     '.<br>'
-        //   DivRow(simplex, i, simplex.table[i][column])
-        //   simplex.basis[i] = column
-        // } else {
-        //   column = 0
-        //   while (column < simplex.total) {
-        //     if (IsBasisVar(simplex, column) || simplex.table[i][column].isZero()) {
-        //       column++
-        //     } else {
-        //       break
-        //     }
-        //   }
-        //   if (column == simplex.total) {
-        //     if (IsRowZero(simplex, i)) {
-        //       html +=
-        //         'Условие ' +
-        //         (i + 1) +
-        //         ' линейно зависимо с другими условиями. Исключаем его из дальнейшего расмотрения.<br>'
-        //       RemoveZeroRow(simplex, i)
-        //       html += 'Обновлённая симплекс-таблица:'
-        //       html += PrintTable(simplex)
-        //       i--
-        //       continue
-        //     } else {
-        //       html += '<br><b>Таблица:</b>'
-        //       html += PrintTable(simplex)
-        //       return (
-        //         html +
-        //         '<br>Обнаружено противоречивое условие. <b>Решение не существует</b>'
-        //       )
-        //     }
-        //   }
-        //   html += MakeVarBasis(simplex, i, column, true)
-        // }
       }
-    }
-    else {
-      for(let i = 0; i< m; i++) {
+    } else {
+      for (let i = 0; i < m; i++) {
         simplex.basis.push(simplex.n + i)
       }
-      for(let i=0; i< restricts[0].values.length; i++) {
+      for (let i = 0; i < restricts[0].values.length; i++) {
         simplex.row.push(i)
       }
     }
   }
 
-  const copy = []
   if (InputStoreService.getSolveType() === 1) {
+    const copy = []
     restricts.forEach(el => copy.push([...el.values, el.b]))
-  }
-  // else {
-  //   restricts.forEach((arr, i) => {
-  //     copy.push([])
-  //     arr.values.forEach(el => {
-  //       copy[i].push(el)
-  //     })
-  //     simplex.basis.forEach((item, j) => {
-  //       if (j === i) {
-  //         copy[i].push(new Fraction('1'))
-  //       } else {
-  //         copy[i].push(new Fraction())
-  //       }
-  //     })
-  //     copy[i].push(arr.b)
-  //   })
-  // }
-
-  let x0 = InputStoreService.xo
-  // if (InputStoreService.getSolveType() === 2) {
-  //   x0 = []
-  //   for (let b = 0; b < n; b++) {
-  //     x0.push('0')
-  //     simplex.row.push(b)
-  //   }
-  //   simplex.basis.forEach(() => x0.push('1'))
-  // }
-
-  if (InputStoreService.getSolveType() === 1) {
-    const gauss = Iteration(restricts.length, copy, restricts.length, x0)
+    const gauss = Iteration(
+      restricts.length,
+      copy,
+      restricts.length,
+      InputStoreService.xo
+    )
     const tableArr = []
     const bArr = []
     gauss.forEach((arr, index) => {
@@ -338,30 +182,7 @@ function PrepareTable(n, m, func, restricts, mode) {
     simplex.total = tableArr[0].length
     simplex.n = tableArr[0].length
   }
-
-  // const answer = []
-  // let i = 0
-  // for (i = 0; i < simplex.table[0].length; i++) {
-  //   answer.push(new Fraction())
-  //   for (let j = 0; j < simplex.table.length; j++) {
-  //     answer[i] = answer[i].add(
-  //       simplex.table[j][i].mult(func[simplex.basis[j]])
-  //     )
-  //   }
-  //   const l = func[simplex.b[i]]
-  //   answer[i] = answer[i].add(l)
-  // }
-
-  // answer.push(new Fraction())
-  // for (let j = 0; j < simplex.table.length; j++) {
-  //   answer[i] = answer[i].add(simplex.b[j].mult(func[simplex.basis[j]]))
-  // }
-  // simplex.fn = answer
   return { simplex: simplex, html: html }
-}
-function CheckBasis(simplex) {
-  for (let i = 0; i < simplex.m; i++) if (simplex.basis[i] < 0) return false
-  return true
 }
 function MakeVarBasis(simplex, row, column, print = false) {
   let html = ''
@@ -400,157 +221,9 @@ function MakeVarBasis(simplex, row, column, print = false) {
   SubRows(simplex, row, column)
   return html
 }
-function IsBasisVar(simplex, index) {
-  for (let i = 0; i < simplex.basis.length; i++)
-    if (index == simplex.basis[i]) return true
-  return false
-}
-function IsRowZero(simplex, row) {
-  if (!simplex.b[row].isZero()) return false
-  for (let j = 0; j < simplex.total; j++)
-    if (!simplex.table[row][j].isZero()) return false
-  return true
-}
-function IsColumnOne(simplex, column, row) {
-  for (let i = 0; i < simplex.m; i++) {
-    if (i != row && !simplex.table[i][column].isZero()) return false
-    if (i == row && !simplex.table[i][column].isOne()) return false
-  }
-  return true
-}
-function GetIdentityColumn(simplex, row) {
-  for (let j = 0; j < simplex.total; j++)
-    if (IsColumnOne(simplex, j, row)) return j
-  return -1
-}
-function RemoveZeroRow(simplex, row) {
-  simplex.table.splice(row, 1)
-  simplex.b.splice(row, 1)
-  simplex.basis.splice(row, 1)
-  simplex.basis.splice(row, 1)
-  simplex.m--
-}
-function FindBasis(simplex) {
-  if (InputStoreService.xo.length) {
-    const arr = []
-    InputStoreService.xo.forEach(el => arr.push(parseInt(el)))
-    simplex.basis = arr
-    return ''
-  }
-  let html = '<b>Ищем базис</b><br>'
-  for (let i = 0; i < simplex.basis.length; i++) {
-    // if (simplex.basis[i] > -1) continue
-    let column = i
-    simplex.basis[i] = column
-    // if (column > -1) {
-    //   html +=
-    //     'В качестве базисной переменной ?<sub>' +
-    //     -simplex.basis[i] +
-    //     '</sub> берём x<sub>' +
-    //     (column + 1) +
-    //     '</sub>'
-    //   html +=
-    //     '. Делим строку ' +
-    //     (i + 1) +
-    //     ' на ' +
-    //     simplex.table[i][column].print(printMode) +
-    //     '.<br>'
-    //   DivRow(simplex, i, simplex.table[i][column])
-    //   simplex.basis[i] = column
-    // } else {
-    //   column = 0
-    //   while (column < simplex.total) {
-    //     if (IsBasisVar(simplex, column) || simplex.table[i][column].isZero()) {
-    //       column++
-    //     } else {
-    //       break
-    //     }
-    //   }
-    //   if (column == simplex.total) {
-    //     if (IsRowZero(simplex, i)) {
-    //       html +=
-    //         'Условие ' +
-    //         (i + 1) +
-    //         ' линейно зависимо с другими условиями. Исключаем его из дальнейшего расмотрения.<br>'
-    //       RemoveZeroRow(simplex, i)
-    //       html += 'Обновлённая симплекс-таблица:'
-    //       html += PrintTable(simplex)
-    //       i--
-    //       continue
-    //     } else {
-    //       html += '<br><b>Таблица:</b>'
-    //       html += PrintTable(simplex)
-    //       return (
-    //         html +
-    //         '<br>Обнаружено противоречивое условие. <b>Решение не существует</b>'
-    //       )
-    //     }
-    //   }
-    //   html += MakeVarBasis(simplex, i, column, true)
-    // }
-  }
-  html += '<br><b>Таблица:</b>'
-  html += PrintTable(simplex)
-  html += '<br>'
-  return html
-}
-function MaxAbsB(simplex) {
-  let imax = -1
-  for (let i = 0; i < simplex.m; i++) {
-    if (!simplex.b[i].isNeg()) continue
-    if (imax == -1 || simplex.b[i].abs().gt(simplex.b[imax].abs())) imax = i
-  }
-  return imax
-}
-function MaxAbsIndex(simplex, row) {
-  let jmax = -1
-  for (let j = 0; j < simplex.total; j++) {
-    if (!simplex.table[row][j].isNeg()) continue
-    if (
-      jmax == -1 ||
-      simplex.table[row][j].abs().gt(simplex.table[row][jmax].abs())
-    )
-      jmax = j
-  }
-  return jmax
-}
-function RemoveNegativeB(simplex) {
-  let row = MaxAbsB(simplex)
-  let column = MaxAbsIndex(simplex, row)
-  let html = ''
-  html +=
-    'Максимальное по модулю |b|<sub>max</sub> = |' +
-    simplex.b[row].print(printMode) +
-    '| находится в строке ' +
-    (row + 1) +
-    '.<br>'
-  if (column == -1) {
-    html +=
-      'В строке ' +
-      (row + 1) +
-      ' отсутстуют отрицательные значения. Решение задачи не существует.'
-    return html
-  }
-  html +=
-    'Максимальный по модулю элемент в строке ' +
-    (row + 1) +
-    ' = ' +
-    simplex.table[row][column].print(printMode) +
-    '  находится в столбце ' +
-    (column + 1) +
-    '.<br>'
-  html += MakeVarBasis(simplex, row, column)
-  html += '<br><b>Обновлённая таблица:</b>'
-  html += PrintTable(simplex, row, column)
-  return html
-}
 function HaveNegativeB(simplex) {
   for (let i = 0; i < simplex.m; i++) if (simplex.b[i].isNeg()) return true
   return false
-}
-function CheckSolveNegativeB(simplex) {
-  let row = MaxAbsB(simplex)
-  return MaxAbsIndex(simplex, row) > -1
 }
 function CalculateDeltas(simplex) {
   for (let j = 0; j < simplex.total; j++) {
@@ -637,12 +310,6 @@ function CheckPlan(simplex) {
 }
 function CheckPlanSolve(simplex) {
   let hint = ''
-  // let hint = CreateHideOpenBlock(
-  //   'Критерий оптимальности',
-  //   'План оптимален, если в таблице отсутствуют ' +
-  //     (simplex.mode == MAX ? 'отрицательные' : 'положительные') +
-  //     ' дельты. '
-  // )
   let html = '<b>Проверяем план на оптимальность:</b> '
   if (InputStoreService.getSolveType() === 2) {
     for (let i = 0; i < simplex.basis.length; i++) {
@@ -687,14 +354,6 @@ function GetColumn(simplex) {
       jmax = j
     else if (simplex.mode == MIN && simplex.deltas[j].gt(simplex.deltas[jmax]))
       jmax = j
-  }
-  return jmax
-}
-function GetColumn2(simplex) {
-  let jmax = 0
-  for (let j = 1; j < simplex.total; j++) {
-    if (simplex.mode == MAX && simplex.fn[j].lt(simplex.fn[jmax])) jmax = j
-    else if (simplex.mode == MIN && simplex.fn[j].gt(simplex.fn[jmax])) jmax = j
   }
   return jmax
 }
@@ -842,21 +501,6 @@ function SolveTable(n, m, func, restricts, mode, html) {
     html.innerHTML += PrintTable(simplex)
   }
   let res = true
-  if (!CheckBasis(simplex)) html.innerHTML += FindBasis(simplex, html)
-  if (!CheckBasis(simplex)) {
-    window['answer'] = 'Решение задачи не существует.'
-    html.innerHTML = 'Решение задачи не существует'
-    return
-  }
-  // while (HaveNegativeB(simplex) && res) {
-  //   html.innerHTML += 'В столбце b присутствуют отрицательные значения.<br>'
-  //   res = CheckSolveNegativeB(simplex)
-  //   html.innerHTML += RemoveNegativeB(simplex)
-  // }
-  // if (!res) {
-  //   window['answer'] = 'Решение задачи не существует.'
-  //   return
-  // }
   CalculateDeltas(simplex)
   html.innerHTML += '<b>Вычисляем дельты:</b> '
   html.innerHTML += CalculateDeltasSolve(simplex)
@@ -864,7 +508,6 @@ function SolveTable(n, m, func, restricts, mode, html) {
   html.innerHTML += PrintTable(simplex)
   let iteration = 1
   html.innerHTML += CheckPlanSolve(simplex)
-  // step(simplex, html, iteration)
   window['iteration'] = iteration
   window['simplex'] = simplex
   window['html'] = html
@@ -993,7 +636,6 @@ function step(simplex, html, iteration) {
     }
 
     let F = CalcFunction(simplex)
-    // html.innerHTML += '<b>Текущий план X:</b> ' + F.plan + '<br>'
     html.innerHTML +=
       '<b>Целевая функция F:</b> ' +
       F.solve +
@@ -1020,9 +662,6 @@ function step(simplex, html, iteration) {
       fInput.id = `row_${iteration}`
       html.appendChild(fInput)
     }
-
-    // html.innerHTML += '<input type="text"> i </input>'
-    // html.innerHTML += '<input type="text"> j </input>'
     if (InputStoreService.getSolution()) {
       html.innerHTML +=
         '<button onclick="window.step(simplex, html, iteration)">Continue</button>'
