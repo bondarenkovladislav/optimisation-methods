@@ -549,9 +549,8 @@ function SolveTable(n, m, func, restricts, mode, html) {
       button.disabled = true
       window.step(simplex, html, iteration)
     })
+    button.id = `button_${iteration}`
     html.appendChild(button)
-    // html.innerHTML +=
-    //   '<div><button onclick="window.step(simplex, html, iteration)">К следующему шагу</button></div>'
   } else {
     step(simplex, html, iteration)
   }
@@ -707,6 +706,7 @@ function step(
         button2.disabled = true
         window.step(simplex, html, iteration)
       })
+      button.id = `button_${iteration}`
 
       button2 = document.createElement('button')
       button2.className = 'button'
@@ -716,6 +716,7 @@ function step(
         button.disabled = true
         window.onBack(html, iteration)
       })
+      button2.id = `button2_${iteration}`
       div.appendChild(button)
       div.appendChild(button2)
       html.appendChild(div)
@@ -771,11 +772,11 @@ function onTableClick(e, table) {
     const rIndex = e.target.closest('tr').rowIndex
     const cIndex = e.target.cellIndex
     if (
-        window.simplex.tableVersion == table.id.replace('tb', '') &&
-        rIndex > 0 &&
-        rIndex < tbAvailableHeightIndex &&
-        cIndex > 0 &&
-        cIndex < tbAvailableWidthIndex
+      window.simplex.tableVersion == table.id.replace('tb', '') &&
+      rIndex > 0 &&
+      rIndex < tbAvailableHeightIndex &&
+      cIndex > 0 &&
+      cIndex < tbAvailableWidthIndex
     ) {
       if (e.target.innerText <= 0) {
         return
@@ -785,7 +786,7 @@ function onTableClick(e, table) {
       let min
       for (let i = 0; i < window.simplex.table.length; i++) {
         const value = window.simplex.b[simplexRowIndex].div(
-            window.simplex.table[i][simplexColIndex]
+          window.simplex.table[i][simplexColIndex]
         )
         if (value.isNeg()) {
           continue
@@ -795,21 +796,30 @@ function onTableClick(e, table) {
         }
       }
       let div = window.simplex.b[simplexRowIndex].div(
-          window.simplex.table[simplexRowIndex][simplexColIndex]
+        window.simplex.table[simplexRowIndex][simplexColIndex]
       )
       if (div.eq(min)) {
         window.step(
-            window.simplex,
-            window.html,
-            window.iteration,
-            simplexRowIndex,
-            simplexColIndex
+          window.simplex,
+          window.html,
+          window.iteration,
+          simplexRowIndex,
+          simplexColIndex
         )
+        for (let i = 1; i < window.iteration; i++) {
+          let button = document.getElementById(`button_${i}`)
+          if (button) {
+            button.disabled = true
+          }
+          button = document.getElementById(`button2_${i}`)
+          if (button) {
+            button.disabled = true
+          }
+        }
       }
     }
-  }
-  catch (e) {
-    return;
+  } catch (e) {
+    return
   }
 }
 
