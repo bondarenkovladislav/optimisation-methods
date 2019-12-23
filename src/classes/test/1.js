@@ -539,7 +539,10 @@ function SolveTable(n, m, func, restricts, mode, html) {
   let simplexStore = []
   window['simplexStore'] = simplexStore
   window.simplexStore.push(clonedeep(simplex))
-
+  if(CheckPlan(simplex)){
+    step(simplex, html, iteration)
+    return
+  }
   if (InputStoreService.getSolution()) {
     const button = document.createElement('button')
     button.className = 'button'

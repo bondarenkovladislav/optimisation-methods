@@ -50,6 +50,7 @@ export const InputCoef = () => {
   const [shouldInit, setShouldInit] = useState<boolean>(false)
   const [openSnack, setOpenSnack] = useState<boolean>(false)
   const [showXo, setShowXo] = useState<boolean>(true)
+  const [x0, setX0] = useState<string>('')
 
   useEffect(() => {
     if (variablesCount && rowsCount) {
@@ -81,7 +82,7 @@ export const InputCoef = () => {
         const values = coefLabels.forEach((col, j) => {
           rowArray.push(`${j}`)
         })
-        rowArray.push('≤')
+        rowArray.push('=')
         rowArray.push(`${100}`)
         arr.push(rowArray)
       })
@@ -123,6 +124,10 @@ export const InputCoef = () => {
     setVariablesCount(res.maxX)
     setValueArray(res.valueArray)
     setFuncArray(res.funcArray)
+    if (res.x0) {
+      InputStoreService.xo = res.x0
+      setX0(res.x0.join(','))
+    }
   }
 
   const appendBaes = () => {
@@ -219,16 +224,8 @@ export const InputCoef = () => {
                     {j !== coefLabels.length - 1 ? (
                       <span>+</span>
                     ) : (
-                      <Grid container direction={'row'}>
-                        <Autocomplete
-                          value={valueArray[i][coefLabels.length]}
-                          options={['≤', '=', '≥']}
-                          style={{ marginLeft: '8px', marginRight: '8px' }}
-                          renderInput={params => (
-                            <TextField {...params} label={'type'} />
-                          )}
-                          onChange={(e, v) => onChangeValue(i, j + 1, v)}
-                        />
+                      <Grid container direction={'row'} alignItems={'center'}>
+                        <div className={styles.equal}>=</div>
                         <TextField
                           label={'свободный коэф.'}
                           value={valueArray[i][coefLabels.length + 1]}
@@ -297,7 +294,13 @@ export const InputCoef = () => {
               <Tooltip title="Введите числа через запятую">
                 <TextField
                   label={'X0 = '}
+                  value={x0}
                   onChange={e => {
+                    setX0(e.target.value)
+                    if (!e.target.value) {
+                      InputStoreService.xo = []
+                      return
+                    }
                     InputStoreService.xo = e.target.value.split(',')
                   }}
                 />
@@ -330,6 +333,7 @@ export const InputCoef = () => {
                   rowCount: rowsCount,
                   funcArray: funcArray,
                   valueArray: valueArray,
+                  x0: InputStoreService.xo,
                 }
                 InputStoreService.download(
                   'export.txt',
@@ -353,22 +357,22 @@ export const InputCoef = () => {
             <DialogContent>
               <Tooltip title="Введите размерность матрицы коэффициентов">
                 <TextField
-                    label={'Кол-во переменных'}
-                    onChange={e => {
-                      try {
-                        const value = parseInt(e.target.value, 10)
-                        if (!value) {
-                          throw new Error('nan')
-                        }
-                        setVariablesCount(value)
-                        setShouldInit(true)
-                        if (e.target.value !== '' && rowsCount) {
-                          setOpenDialog(false)
-                        }
-                      } catch (e) {
-                        setOpenSnack(true)
+                  label={'Кол-во переменных'}
+                  onChange={e => {
+                    try {
+                      const value = parseInt(e.target.value, 10)
+                      if (!value) {
+                        throw new Error('nan')
                       }
-                    }}
+                      setVariablesCount(value)
+                      setShouldInit(true)
+                      if (e.target.value !== '' && rowsCount) {
+                        setOpenDialog(false)
+                      }
+                    } catch (e) {
+                      setOpenSnack(true)
+                    }
+                  }}
                 />
               </Tooltip>
               <Tooltip title="Введите размерность задачи">
