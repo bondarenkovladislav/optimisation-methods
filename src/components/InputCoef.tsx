@@ -251,21 +251,12 @@ export const InputCoef = () => {
                 <Checkbox onChange={InputStoreService.toggleSolution} />
               </span>
             </Tooltip>
-            <Tooltip
-              title={
-                'Запретить системе автомотический выбор оптимального элемента'
-              }
-            >
-              <span>
-                Ручной выбор оптимального элемента
-                <Checkbox onChange={InputStoreService.toggleAutoselect} />
-              </span>
-            </Tooltip>
             <div className={styles.auto}>
               <Autocomplete
                 id="combo-box-demo"
                 autoComplete={false}
                 disableClearable={true}
+                defaultValue={{title: "Симплекс-метод", value: 1}}
                 options={comboItems}
                 getOptionLabel={option => option.title}
                 style={{ width: 300 }}
