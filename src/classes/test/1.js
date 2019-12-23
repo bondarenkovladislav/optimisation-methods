@@ -131,7 +131,7 @@ function PrepareTable(n, m, func, restricts, mode) {
     html += findHtml + basisHtml.join('') + '<br>'
   }
 
-  if (InputStoreService.xo && InputStoreService.xo.length) {
+  if (InputStoreService.getSolveType() === 1 && InputStoreService.xo && InputStoreService.xo.length) {
     simplex.basis = []
     InputStoreService.xo.forEach((el, index) => {
       if (el === '1') {

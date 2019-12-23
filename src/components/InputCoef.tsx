@@ -182,13 +182,6 @@ export const InputCoef = () => {
                   <span>+</span>
                 </div>
               ))}
-              {/*<TextField*/}
-              {/*  label={'free term'}*/}
-              {/*  value={funcArray[coefLabels.length]}*/}
-              {/*  onChange={e =>*/}
-              {/*    onFuncValueChange(coefLabels.length, e.target.value)*/}
-              {/*  }*/}
-              {/*/>*/}
               <span>-></span>
               <Autocomplete
                 value={funcArray[coefLabels.length]}
@@ -310,7 +303,6 @@ export const InputCoef = () => {
                 InputStoreService.inputPreprocess()
                 init()
                 window.Solve()
-                // history.push('/simplecs')
               }}
             >
               Решить
