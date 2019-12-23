@@ -249,7 +249,7 @@ export const InputCoef = () => {
                 id="combo-box-demo"
                 autoComplete={false}
                 disableClearable={true}
-                defaultValue={{title: "Симплекс-метод", value: 1}}
+                defaultValue={{ title: 'Симплекс-метод', value: 1 }}
                 options={comboItems}
                 getOptionLabel={option => option.title}
                 style={{ width: 300 }}
@@ -290,42 +290,68 @@ export const InputCoef = () => {
                 />
               </Tooltip>
             )}
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => {
-                InputStoreService.setFuncArray(funcArray)
-                InputStoreService.setValueArray(valueArray)
-                if (variablesCount && rowsCount) {
-                  InputStoreService.setMaxX(variablesCount)
-                  InputStoreService.setRowCount(rowsCount)
-                }
-                InputStoreService.inputPreprocess()
-                init()
-                window.Solve()
-              }}
-            >
-              Решить
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => {
-                const exportObject = {
-                  maxX: variablesCount,
-                  rowCount: rowsCount,
-                  funcArray: funcArray,
-                  valueArray: valueArray,
-                  x0: InputStoreService.xo,
-                }
-                InputStoreService.download(
-                  'export.txt',
-                  JSON.stringify(exportObject)
-                )
-              }}
-            >
-              Экспорт
-            </Button>
+            <div style={{ marginTop: '8px' }}>
+              <Button
+                style={{ marginRight: '8px' }}
+                variant="contained"
+                color="primary"
+                onClick={() => {
+                  if (x0) {
+                    const arr = x0.split(',')
+                    if (arr.length !== variablesCount) {
+                      setOpenSnack(true)
+                      return
+                    } else {
+                      try {
+                        arr.forEach(el => {
+                          const value = parseInt(el, 10)
+                          if (
+                            value === null ||
+                            value === undefined ||
+                            value !== value
+                          ) {
+                            throw new Error('nan')
+                          }
+                        })
+                      } catch (e) {
+                        setOpenSnack(true)
+                        return
+                      }
+                    }
+                  }
+                  InputStoreService.setFuncArray(funcArray)
+                  InputStoreService.setValueArray(valueArray)
+                  if (variablesCount && rowsCount) {
+                    InputStoreService.setMaxX(variablesCount)
+                    InputStoreService.setRowCount(rowsCount)
+                  }
+                  InputStoreService.inputPreprocess()
+                  init()
+                  window.Solve()
+                }}
+              >
+                Решить
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => {
+                  const exportObject = {
+                    maxX: variablesCount,
+                    rowCount: rowsCount,
+                    funcArray: funcArray,
+                    valueArray: valueArray,
+                    x0: InputStoreService.xo,
+                  }
+                  InputStoreService.download(
+                    'export.txt',
+                    JSON.stringify(exportObject)
+                  )
+                }}
+              >
+                Экспорт
+              </Button>
+            </div>
           </div>
         )}
         {openDialog && (
@@ -421,7 +447,9 @@ export const InputCoef = () => {
             'aria-describedby': 'message-id',
           }}
           message={
-            <span id="message-id">Введите правильное числовое значение</span>
+            <span id="message-id">
+              Введите правильное числовое значение или x0
+            </span>
           }
           action={[
             <Button
