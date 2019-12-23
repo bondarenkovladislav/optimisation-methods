@@ -507,7 +507,6 @@ function SolveTable(n, m, func, restricts, mode, html) {
   if (InputStoreService.getSolveType() === 2) {
     html.innerHTML += PrintTable(simplex)
   }
-  let res = true
   CalculateDeltas(simplex)
   html.innerHTML += '<b>Вычисляем дельты:</b> '
   html.innerHTML += CalculateDeltasSolve(simplex)
@@ -558,14 +557,13 @@ function SolveTable(n, m, func, restricts, mode, html) {
 function onBack(html, iteration) {
   if (iteration <= 2) {
     if (iteration === 2) {
-      SolveTable(
-        window.n,
-        window.m,
-        window.func,
-        window.restricts,
-        window.mode,
-        window.html
-      )
+      let solveBox = document.getElementById('simplex-solve')
+      let n = InputStoreService.getMaxX()
+      let m = InputStoreService.getRowCount()
+      let mode = InputStoreService.getMode()
+      let func = InputStoreService.getFuncArray()
+      let restricts = InputStoreService.getValueArray()
+      SolveTable(n, m, func, restricts, mode, solveBox)
     }
     return
   }
@@ -573,6 +571,22 @@ function onBack(html, iteration) {
   window.simplexStore.pop()
   const current = window.simplexStore[window.simplexStore.length - 1]
   window.simplex = current
+  // const start = document.getElementById(`div_${iteration + 1}`)
+  // let del = false
+  // const children = start.parentNode.children
+  // for (let i = 0; ; ) {
+  //   if (!children[i]) {
+  //     break
+  //   }
+  //   if (!del && children[i] == start) {
+  //     del = true
+  //   }
+  //   if (del) {
+  //     children[i].remove()
+  //     continue
+  //   }
+  //   i++
+  // }
   window.step(current, html, iteration)
 }
 function step(
@@ -597,11 +611,11 @@ function step(
         parseInt(document.getElementById(`column_${iteration}`).value, 10) - 1
       row = parseInt(document.getElementById(`row_${iteration}`).value, 10) - 1
     }
-
+    html.innerHTML += '<div id=' + `div_${iteration}` + '></div>'
     html.innerHTML += '<h3>Итерация ' + iteration + '</h3>'
     if (selectedRow === null || selectedColumn === null) {
       html.innerHTML +=
-        'Определяем <i>разрешающий столбец</i> - столбец, в котором находится '
+        '<span>Определяем <i>разрешающий столбец</i> - столбец, в котором находится'
       html.innerHTML +=
         (simplex.mode == MAX ? 'минимальная' : 'максимальная') + ' дельта: '
       html.innerHTML +=
@@ -611,7 +625,7 @@ function step(
         (column + 1) +
         '</sub>: ' +
         simplex.deltas[column].print(printMode) +
-        '<br>'
+        '</span><br>'
     } else {
       html.innerHTML += 'Выбранный разрешающий столбец: ' + `${column + 1}<br>`
     }
@@ -695,6 +709,11 @@ function step(
       fInput.id = `row_${iteration}`
       html.appendChild(fInput)
     }
+    if (CheckPlan(simplex)) {
+      window.done = true
+      step(simplex, html, iteration)
+      return
+    }
     if (InputStoreService.getSolution()) {
       const div = document.createElement('div')
       let button, button2
@@ -724,6 +743,7 @@ function step(
       step(simplex, html, iteration)
     }
   } else {
+    window.done = true
     if (HaveNegativeB(simplex)) {
       html.innerHTML +=
         'В столбце b присутствуют отрицательные значения. Решения не существует.'
@@ -738,6 +758,7 @@ function step(
   }
 }
 function Solve() {
+  window.done = false
   let solveBox = document.getElementById('simplex-solve')
   let n = InputStoreService.getMaxX()
   let m = InputStoreService.getRowCount()
@@ -767,6 +788,9 @@ function Solve() {
 }
 function onTableClick(e, table) {
   try {
+    if (window.done) {
+      return
+    }
     const tbAvailableWidthIndex = window.simplex.table[0].length + 1
     const tbAvailableHeightIndex = window.simplex.table.length + 1
     const rIndex = e.target.closest('tr').rowIndex
