@@ -134,7 +134,7 @@ function PrepareTable(n, m, func, restricts, mode) {
   if (InputStoreService.getSolveType() === 1 && InputStoreService.xo && InputStoreService.xo.length) {
     simplex.basis = []
     InputStoreService.xo.forEach((el, index) => {
-      if (el === '1') {
+      if (el !== '0') {
         simplex.basis.push(index)
       } else {
         simplex.row.push(index)
